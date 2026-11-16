@@ -1,0 +1,72 @@
+# Pruebas del CU3 - Confeccionar y Controlar la Parrilla
+# Formato de cada linea:   remitente | asunto
+# Ejecutar:  ejecutar.bat --lote pruebas\cu3.txt     (respuestas en salida\01.html, 02.html, ...)
+# Requiere: --instalar y haber corrido pruebas\cu1.txt, cu2.txt y cu4.txt
+#           (usa el programa "Noticiero Central", el material NOT-2011 en PENDIENTE y el usuario ana.rojas@gmail.com).
+# OJO: crea y borra parrillas en la base configurada. Usa fechas de 2030 para no chocar con datos reales.
+# Para probar pubPar con exito total con un programa, apruebe antes NOT-2011 con (CU5):
+#   valMat["NOT-2011","APROBADO",""]   (ver pruebas\cu5.txt)
+
+# --- ayuda ---
+larzekaobnc@gmail.com | help["3"]
+
+# --- casos correctos ---
+larzekaobnc@gmail.com | insPar["2030-11-20"]
+larzekaobnc@gmail.com | insBlo["2030-11-20","20:00","21:00","PROGRAMA","Noticiero Central","NOT-2011"]
+larzekaobnc@gmail.com | insBlo["2030-11-20","21:00","21:10","PAUSA_COMERCIAL","",""]
+larzekaobnc@gmail.com | insBlo["2030-11-20","8:00","9:00","PROGRAMA","noticiero central",""]
+larzekaobnc@gmail.com | mosPar["2030-11-20"]
+larzekaobnc@gmail.com | lisPar["*"]
+larzekaobnc@gmail.com | lisPar["2030-11"]
+ana.rojas@gmail.com | mosPar["2030-11-20"]
+larzekaobnc@gmail.com | eliBlo["2030-11-20","08:00"]
+
+# --- validaciones (deben dar error) ---
+larzekaobnc@gmail.com | insPar["2030-11-20"]
+larzekaobnc@gmail.com | insPar["20/11/2030"]
+larzekaobnc@gmail.com | insPar["2030-02-30"]
+larzekaobnc@gmail.com | mosPar["2031-01-01"]
+larzekaobnc@gmail.com | lisPar["noviembre"]
+larzekaobnc@gmail.com | insBlo["2030-11-20","20:30","20:45","PROGRAMA","Noticiero Central",""]
+larzekaobnc@gmail.com | insBlo["2030-11-20","19:30","20:01","PAUSA_COMERCIAL","",""]
+larzekaobnc@gmail.com | insBlo["2030-11-20","22:00","21:00","PROGRAMA","Noticiero Central",""]
+larzekaobnc@gmail.com | insBlo["2030-11-20","22:00","23:00","PROGRAMA","",""]
+larzekaobnc@gmail.com | insBlo["2030-11-20","22:00","23:00","MUSICA","",""]
+larzekaobnc@gmail.com | insBlo["2030-11-20","22:00","23:00","PROGRAMA","No Existe",""]
+larzekaobnc@gmail.com | insBlo["2030-11-20","22:00","23:00","PROGRAMA","Noticiero Central","NO-EXISTE"]
+larzekaobnc@gmail.com | insBlo["2030-11-20","22:00","23:00","PAUSA_COMERCIAL","Noticiero Central",""]
+larzekaobnc@gmail.com | insBlo["2031-01-01","22:00","23:00","PROGRAMA","Noticiero Central",""]
+larzekaobnc@gmail.com | eliBlo["2030-11-20","15:00"]
+larzekaobnc@gmail.com | eliBlo["2031-01-01","20:00"]
+
+# --- permisos (ENCARGADO no arma la parrilla) ---
+ana.rojas@gmail.com | insPar["2030-11-21"]
+ana.rojas@gmail.com | pubPar["2030-11-20"]
+
+# --- publicacion: errores que la impiden (NOT-2011 PENDIENTE, sin bloques, sin material) ---
+larzekaobnc@gmail.com | insPar["2030-11-22"]
+larzekaobnc@gmail.com | pubPar["2030-11-22"]
+larzekaobnc@gmail.com | pubPar["2030-11-20"]
+
+# --- publicacion con exito (solo pausas comerciales) y aviso de hueco ---
+larzekaobnc@gmail.com | insPar["2030-11-23"]
+larzekaobnc@gmail.com | insBlo["2030-11-23","20:00","20:10","PAUSA_COMERCIAL","",""]
+larzekaobnc@gmail.com | insBlo["2030-11-23","21:00","21:10","PAUSA_COMERCIAL","",""]
+larzekaobnc@gmail.com | pubPar["2030-11-23"]
+
+# --- una parrilla publicada ya no se modifica ---
+larzekaobnc@gmail.com | pubPar["2030-11-23"]
+larzekaobnc@gmail.com | insBlo["2030-11-23","22:00","23:00","PAUSA_COMERCIAL","",""]
+larzekaobnc@gmail.com | eliBlo["2030-11-23","20:00"]
+larzekaobnc@gmail.com | eliPar["2030-11-23"]
+
+# --- baja de parrillas en borrador ---
+larzekaobnc@gmail.com | eliPar["2030-11-22"]
+larzekaobnc@gmail.com | eliPar["2030-11-22"]
+larzekaobnc@gmail.com | eliPar["2030-11-20"]
+
+# --- relacion con el CU2: un programa con bloques futuros no se da de baja ---
+larzekaobnc@gmail.com | insPar["2030-11-24"]
+larzekaobnc@gmail.com | insBlo["2030-11-24","20:00","21:00","PROGRAMA","Noticiero Central",""]
+larzekaobnc@gmail.com | eliPro["Noticiero Central"]
+larzekaobnc@gmail.com | eliPar["2030-11-24"]

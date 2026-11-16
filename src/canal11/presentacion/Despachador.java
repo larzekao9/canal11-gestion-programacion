@@ -51,6 +51,7 @@ public class Despachador {
         PUsuario usuario = new PUsuario();
         PPrograma programa = new PPrograma();
         PMaterial material = new PMaterial();
+        PParrilla parrilla = new PParrilla();
 
         // ------------------------------------------------------------------ CU1 (implementado)
         cu(1, "Gestión de Usuarios", "Registrar y administrar a los usuarios del sistema y su rol.");
@@ -86,16 +87,16 @@ public class Despachador {
         // ------------------------------------------------------------------ CU3
         cu(3, "Gestión de Confeccionar y Controlar la Parrilla de Programación",
                 "Armar la parrilla de cada día por bloques horarios, revisarla y publicarla.");
-        cmd(3, "lisPar", "Lista las parrillas. Filtro: \"*\" = todas, o un mes AAAA-MM", p("filtro"), "lisPar[\"*\"]", TODOS, null);
-        cmd(3, "mosPar", "Muestra la parrilla de un día con todos sus bloques en orden", p("fecha"), "mosPar[\"2026-11-20\"]", TODOS, null);
-        cmd(3, "insPar", "Crea la parrilla (en borrador) de un día", p("fecha"), "insPar[\"2026-11-20\"]", ADM_PRO, null);
-        cmd(3, "eliPar", "Elimina la parrilla de un día (solo si sigue en borrador)", p("fecha"), "eliPar[\"2026-11-20\"]", ADM_PRO, null);
+        cmd(3, "lisPar", "Lista las parrillas. Filtro: \"*\" = todas, o un mes AAAA-MM", p("filtro"), "lisPar[\"*\"]", TODOS, parrilla::listar);
+        cmd(3, "mosPar", "Muestra la parrilla de un día con todos sus bloques en orden", p("fecha"), "mosPar[\"2026-11-20\"]", TODOS, parrilla::mostrar);
+        cmd(3, "insPar", "Crea la parrilla (en borrador) de un día", p("fecha"), "insPar[\"2026-11-20\"]", ADM_PRO, parrilla::insertar);
+        cmd(3, "eliPar", "Elimina la parrilla de un día (solo si sigue en borrador)", p("fecha"), "eliPar[\"2026-11-20\"]", ADM_PRO, parrilla::eliminar);
         cmd(3, "insBlo", "Agrega un bloque a la parrilla. Tipo: PROGRAMA o PAUSA_COMERCIAL. Material (código) puede ir vacío \"\"",
                 p("fecha", "hora_inicio", "hora_fin", "tipo", "programa (nombre)", "material (código)"),
-                "insBlo[\"2026-11-20\",\"20:00\",\"21:00\",\"PROGRAMA\",\"Noticiero Central\",\"NOT-2011\"]", ADM_PRO, null);
-        cmd(3, "eliBlo", "Quita un bloque de la parrilla", p("fecha", "hora_inicio"), "eliBlo[\"2026-11-20\",\"20:00\"]", ADM_PRO, null);
+                "insBlo[\"2026-11-20\",\"20:00\",\"21:00\",\"PROGRAMA\",\"Noticiero Central\",\"NOT-2011\"]", ADM_PRO, parrilla::insertarBloque);
+        cmd(3, "eliBlo", "Quita un bloque de la parrilla", p("fecha", "hora_inicio"), "eliBlo[\"2026-11-20\",\"20:00\"]", ADM_PRO, parrilla::eliminarBloque);
         cmd(3, "pubPar", "Revisa la parrilla (solapes, huecos, materiales aprobados) y la publica",
-                p("fecha"), "pubPar[\"2026-11-20\"]", ADM_PRO, null);
+                p("fecha"), "pubPar[\"2026-11-20\"]", ADM_PRO, parrilla::publicar);
 
         // ------------------------------------------------------------------ CU4
         cu(4, "Gestión de Materiales de Video", "Registrar los videos (programas, spots, promos) con un código único y evitar duplicados.");
