@@ -53,6 +53,7 @@ public class Despachador {
         PMaterial material = new PMaterial();
         PParrilla parrilla = new PParrilla();
         PValidacion validacion = new PValidacion();
+        PPauta pauta = new PPauta();
 
         // ------------------------------------------------------------------ CU1 (implementado)
         cu(1, "Gestión de Usuarios", "Registrar y administrar a los usuarios del sistema y su rol.");
@@ -124,17 +125,17 @@ public class Despachador {
         // ------------------------------------------------------------------ CU6
         cu(6, "Gestión de Pauta Publicitaria e Insertar Spots Comerciales",
                 "Registrar las pautas y ubicar sus spots en las pausas comerciales de la parrilla.");
-        cmd(6, "lisPau", "Lista las pautas. Filtro: \"*\" = todas, o el nombre del anunciante", p("filtro"), "lisPau[\"*\"]", TODOS, null);
-        cmd(6, "mosPau", "Muestra una pauta con sus spots programados", p("pauta (nombre)"), "mosPau[\"Navidad Banco Sol\"]", TODOS, null);
+        cmd(6, "lisPau", "Lista las pautas. Filtro: \"*\" = todas, o el nombre del anunciante", p("filtro"), "lisPau[\"*\"]", TODOS, pauta::listar);
+        cmd(6, "mosPau", "Muestra una pauta con sus spots programados", p("pauta (nombre)"), "mosPau[\"Navidad Banco Sol\"]", TODOS, pauta::mostrar);
         cmd(6, "insPau", "Registra una pauta publicitaria",
                 p("nombre", "anunciante", "fecha_inicio", "fecha_fin", "max_pases"),
-                "insPau[\"Navidad Banco Sol\",\"Banco Sol\",\"2026-12-01\",\"2026-12-31\",\"40\"]", ADM_PRO, null);
-        cmd(6, "eliPau", "Da de baja una pauta", p("pauta (nombre)"), "eliPau[\"Navidad Banco Sol\"]", ADM_PRO, null);
+                "insPau[\"Navidad Banco Sol\",\"Banco Sol\",\"2026-12-01\",\"2026-12-31\",\"40\"]", ADM_PRO, pauta::insertar);
+        cmd(6, "eliPau", "Da de baja una pauta", p("pauta (nombre)"), "eliPau[\"Navidad Banco Sol\"]", ADM_PRO, pauta::eliminar);
         cmd(6, "insSpo", "Inserta un spot en la pausa comercial que empieza a hora_pausa",
                 p("pauta (nombre)", "material (código)", "fecha", "hora_pausa", "hora_spot"),
-                "insSpo[\"Navidad Banco Sol\",\"SPOT-BSOL-01\",\"2026-12-05\",\"20:30\",\"20:30:00\"]", ADM_PRO, null);
+                "insSpo[\"Navidad Banco Sol\",\"SPOT-BSOL-01\",\"2026-12-05\",\"20:30\",\"20:30:00\"]", ADM_PRO, pauta::insertarSpot);
         cmd(6, "eliSpo", "Quita el spot programado en esa fecha y hora", p("fecha", "hora_spot"),
-                "eliSpo[\"2026-12-05\",\"20:30:00\"]", ADM_PRO, null);
+                "eliSpo[\"2026-12-05\",\"20:30:00\"]", ADM_PRO, pauta::eliminarSpot);
 
         // ------------------------------------------------------------------ CU7
         cu(7, "Gestión de Conciliar Emisión Real, Registrar Auditoría",

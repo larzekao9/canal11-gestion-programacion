@@ -1,0 +1,82 @@
+# Pruebas del CU6 - Pauta Publicitaria e Insertar Spots Comerciales
+# Formato de cada linea:   remitente | asunto
+# Ejecutar:  ejecutar.bat --lote pruebas\cu6.txt     (respuestas en salida\01.html, 02.html, ...)
+# Requiere: --instalar y haber corrido pruebas\cu1.txt, cu2.txt, cu4.txt y cu5.txt
+#           (usa SPOT-BSOL-01 APROBADO de 30 s, NOT-2011 de tipo PROGRAMA, el programa "Noticiero Central",
+#            ana.rojas@gmail.com = ENCARGADO y pedro.vaca@hotmail.com = PROGRAMADOR).
+# OJO: crea pautas, parrillas, materiales y spots en la base configurada (fechas de 2031).
+
+# --- ayuda ---
+larzekaobnc@gmail.com | help["6"]
+
+# --- preparacion: una parrilla con un programa y una pausa de 2 minutos (120 s) ---
+larzekaobnc@gmail.com | insPar["2031-04-10"]
+larzekaobnc@gmail.com | insBlo["2031-04-10","20:00","20:30","PROGRAMA","Noticiero Central",""]
+larzekaobnc@gmail.com | insBlo["2031-04-10","20:30","20:32","PAUSA_COMERCIAL","",""]
+larzekaobnc@gmail.com | insMat["SPOT-PEND-01","Spot sin validar","SPOT","","15","MP4","/spots/pend_01.mp4"]
+
+# --- casos correctos: pautas ---
+larzekaobnc@gmail.com | insPau["Navidad Banco Sol","Banco Sol","2031-04-01","2031-04-30","40"]
+pedro.vaca@hotmail.com | insPau["Una sola vez","Tienda Uno","2031-04-01","2031-04-30","1"]
+larzekaobnc@gmail.com | lisPau["*"]
+larzekaobnc@gmail.com | lisPau["banco"]
+ana.rojas@gmail.com | mosPau["Navidad Banco Sol"]
+larzekaobnc@gmail.com | mosPau["navidad banco sol"]
+
+# --- validaciones de insPau (deben dar error) ---
+larzekaobnc@gmail.com | insPau["","","2031-13-01","2031-04-30","0"]
+larzekaobnc@gmail.com | insPau["Pauta mala","Anunciante","2031-04-30","2031-04-01","10"]
+larzekaobnc@gmail.com | insPau["Pauta mala","Anunciante","2031-04-01","2031-04-30","10001"]
+larzekaobnc@gmail.com | insPau["navidad banco sol","Banco Sol","2031-04-01","2031-04-30","40"]
+larzekaobnc@gmail.com | mosPau["No Existe"]
+
+# --- permisos (ENCARGADO solo consulta) ---
+ana.rojas@gmail.com | insPau["Prohibida","X","2031-04-01","2031-04-30","5"]
+ana.rojas@gmail.com | insSpo["Navidad Banco Sol","SPOT-BSOL-01","2031-04-10","20:30","20:30:00"]
+ana.rojas@gmail.com | eliSpo["2031-04-10","20:30:00"]
+
+# --- casos correctos: spots ---
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","SPOT-BSOL-01","2031-04-10","20:30","20:30:00"]
+pedro.vaca@hotmail.com | insSpo["navidad banco sol","spot-bsol-01","2031-04-10","20:30","20:30:30"]
+larzekaobnc@gmail.com | mosPau["Navidad Banco Sol"]
+
+# --- validaciones de insSpo (deben dar error) ---
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","SPOT-BSOL-01","2031-04-10","20:30","20:30:00"]
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","SPOT-BSOL-01","2031-04-10","20:30","20:32:00"]
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","SPOT-BSOL-01","2031-04-10","20:30","20:29:00"]
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","SPOT-BSOL-01","2031-04-10","20:30","20:31:45"]
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","SPOT-BSOL-01","2031-05-10","20:30","20:30:10"]
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","SPOT-BSOL-01","2031-04-11","20:30","20:30:10"]
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","SPOT-BSOL-01","2031-04-10","20:00","20:10:00"]
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","SPOT-BSOL-01","2031-04-10","20:15","20:15:00"]
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","NOT-2011","2031-04-10","20:30","20:31:00"]
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","SPOT-PEND-01","2031-04-10","20:30","20:31:00"]
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","NO-EXISTE","2031-04-10","20:30","20:31:00"]
+larzekaobnc@gmail.com | insSpo["No Existe","SPOT-BSOL-01","2031-04-10","20:30","20:31:00"]
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","SPOT-BSOL-01","fecha","2030","x"]
+
+# --- maximo de pases: la pauta "Una sola vez" permite 1 (la pausa lleva 60 s de 120 s; el segundo falla por pases) ---
+larzekaobnc@gmail.com | insSpo["Una sola vez","SPOT-BSOL-01","2031-04-10","20:30","20:31:00"]
+larzekaobnc@gmail.com | insSpo["Una sola vez","SPOT-BSOL-01","2031-04-10","20:30","20:31:30"]
+
+# --- capacidad de la pausa: con 90 s ocupados cabe un spot de 30 s mas (queda en 120 s); el siguiente ya no cabe ---
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","SPOT-BSOL-01","2031-04-10","20:30","20:31:15"]
+larzekaobnc@gmail.com | insSpo["Navidad Banco Sol","SPOT-BSOL-01","2031-04-10","20:30","20:30:10"]
+
+# --- relaciones con otros CU: no se quita lo que tiene spots ---
+larzekaobnc@gmail.com | eliBlo["2031-04-10","20:30"]
+larzekaobnc@gmail.com | eliPar["2031-04-10"]
+larzekaobnc@gmail.com | eliPau["Navidad Banco Sol"]
+
+# --- eliSpo ---
+larzekaobnc@gmail.com | eliSpo["2031-04-10","20:30:00"]
+larzekaobnc@gmail.com | eliSpo["2031-04-10","20:30:00"]
+larzekaobnc@gmail.com | eliSpo["2031-04-10","20:30"]
+larzekaobnc@gmail.com | eliSpo["2031-04-11","20:30:00"]
+larzekaobnc@gmail.com | eliSpo["2031-04-10","hora"]
+
+# --- baja de una pauta sin spots ---
+larzekaobnc@gmail.com | insPau["Pauta temporal","Temporal SA","2031-04-01","2031-04-30","5"]
+larzekaobnc@gmail.com | eliPau["Pauta temporal"]
+larzekaobnc@gmail.com | eliPau["Pauta temporal"]
+larzekaobnc@gmail.com | insSpo["Pauta temporal","SPOT-BSOL-01","2031-04-10","20:30","20:31:10"]
