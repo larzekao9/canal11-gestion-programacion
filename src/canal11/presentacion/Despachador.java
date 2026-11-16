@@ -52,6 +52,7 @@ public class Despachador {
         PPrograma programa = new PPrograma();
         PMaterial material = new PMaterial();
         PParrilla parrilla = new PParrilla();
+        PValidacion validacion = new PValidacion();
 
         // ------------------------------------------------------------------ CU1 (implementado)
         cu(1, "Gestión de Usuarios", "Registrar y administrar a los usuarios del sistema y su rol.");
@@ -117,8 +118,8 @@ public class Despachador {
         cu(5, "Gestión de Validar Estado de Emisión", "Aprobar o rechazar materiales y ver si cada bloque está listo para salir al aire.");
         cmd(5, "valMat", "Aprueba o rechaza un material. Estado: APROBADO o RECHAZADO (al rechazar, la observación es obligatoria)",
                 p("material (código)", "estado", "observacion"), "valMat[\"NOT-2011\",\"APROBADO\",\"Audio y video correctos\"]",
-                ADM_ENC, null);
-        cmd(5, "estPar", "Estado de emisión de cada bloque de la parrilla de un día", p("fecha"), "estPar[\"2026-11-20\"]", TODOS, null);
+                ADM_ENC, validacion::validar);
+        cmd(5, "estPar", "Estado de emisión de cada bloque de la parrilla de un día", p("fecha"), "estPar[\"2026-11-20\"]", TODOS, validacion::estadoParrilla);
 
         // ------------------------------------------------------------------ CU6
         cu(6, "Gestión de Pauta Publicitaria e Insertar Spots Comerciales",

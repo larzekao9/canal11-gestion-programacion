@@ -1,0 +1,59 @@
+# Pruebas del CU5 - Validar Estado de Emision
+# Formato de cada linea:   remitente | asunto
+# Ejecutar:  ejecutar.bat --lote pruebas\cu5.txt     (respuestas en salida\01.html, 02.html, ...)
+# Requiere: --instalar y haber corrido pruebas\cu1.txt, cu2.txt y cu4.txt
+#           (usa NOT-2011 y SPOT-BSOL-01 en PENDIENTE, PROMO-01 dado de baja, ana.rojas@gmail.com = ENCARGADO
+#            y pedro.vaca@hotmail.com = PROGRAMADOR).
+# OJO: aprueba y rechaza materiales y crea parrillas en la base configurada (fechas de 2031).
+
+# --- ayuda ---
+larzekaobnc@gmail.com | help["5"]
+
+# --- validaciones de valMat (deben dar error) ---
+larzekaobnc@gmail.com | valMat["NOT-2011","RECHAZADO",""]
+larzekaobnc@gmail.com | valMat["NOT-2011","TAL_VEZ","x"]
+larzekaobnc@gmail.com | valMat["","APROBADO",""]
+larzekaobnc@gmail.com | valMat["NO-EXISTE","APROBADO",""]
+larzekaobnc@gmail.com | valMat["PROMO-01","APROBADO","Esta de baja"]
+
+# --- permisos (PROGRAMADOR no valida; ENCARGADO si) ---
+pedro.vaca@hotmail.com | valMat["NOT-2011","APROBADO","Intento"]
+pedro.vaca@hotmail.com | estPar["2031-03-10"]   # estPar es de todos los roles: falla solo porque la parrilla aun no existe
+
+# --- rechazo, reglas de transicion y correccion ---
+ana.rojas@gmail.com | valMat["SPOT-BSOL-01","RECHAZADO","Audio con ruido en el segundo 12"]
+ana.rojas@gmail.com | mosMat["SPOT-BSOL-01"]
+ana.rojas@gmail.com | lisMat["RECHAZADO"]
+ana.rojas@gmail.com | valMat["SPOT-BSOL-01","RECHAZADO","Sigue mal"]
+ana.rojas@gmail.com | valMat["SPOT-BSOL-01","aprobado","Audio corregido"]
+
+# --- aprobacion ---
+ana.rojas@gmail.com | valMat["NOT-2011","APROBADO",""]
+ana.rojas@gmail.com | valMat["NOT-2011","APROBADO","otra vez"]
+larzekaobnc@gmail.com | mosMat["NOT-2011"]
+larzekaobnc@gmail.com | lisMat["APROBADO"]
+
+# --- estado de emision de una parrilla: de todo un poco ---
+larzekaobnc@gmail.com | insPar["2031-03-10"]
+larzekaobnc@gmail.com | estPar["2031-03-10"]
+larzekaobnc@gmail.com | insBlo["2031-03-10","08:00","09:00","PROGRAMA","Noticiero Central","NOT-2011"]
+larzekaobnc@gmail.com | insBlo["2031-03-10","09:00","09:05","PAUSA_COMERCIAL","",""]
+larzekaobnc@gmail.com | insBlo["2031-03-10","12:00","13:00","PROGRAMA","Noticiero Central",""]
+larzekaobnc@gmail.com | insBlo["2031-03-10","20:00","21:00","PROGRAMA","Noticiero Central","SPOT-BSOL-01"]
+pedro.vaca@hotmail.com | estPar["2031-03-10"]   # estPar es de todos los roles: falla solo porque la parrilla aun no existe
+ana.rojas@gmail.com | estPar["2031-03-10"]
+
+# --- parrilla con todo listo (solo bloque aprobado) y publicacion que ahora SI funciona ---
+larzekaobnc@gmail.com | eliBlo["2031-03-10","12:00"]
+larzekaobnc@gmail.com | eliBlo["2031-03-10","20:00"]
+larzekaobnc@gmail.com | estPar["2031-03-10"]
+larzekaobnc@gmail.com | pubPar["2031-03-10"]
+larzekaobnc@gmail.com | estPar["2031-03-10"]
+
+# --- si cambia la ruta/duracion de un APROBADO, vuelve a PENDIENTE y la parrilla deja de estar lista ---
+larzekaobnc@gmail.com | modMat["NOT-2011","Noticiero 20 de noviembre","PROGRAMA","Noticiero Central","3500","MP4","/prensa/not_2011.mp4"]
+larzekaobnc@gmail.com | estPar["2031-03-10"]
+
+# --- errores de fecha ---
+larzekaobnc@gmail.com | estPar["2031-03-11"]
+larzekaobnc@gmail.com | estPar["hoy"]
