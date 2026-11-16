@@ -1,0 +1,85 @@
+# Pruebas del CU7 - Conciliar Emision Real, Registrar Auditoria
+# Formato de cada linea:   remitente | asunto
+# Ejecutar:  ejecutar.bat --lote pruebas\cu7.txt     (respuestas en salida\01.html, 02.html, ...)
+# Requiere: --instalar y haber corrido pruebas\cu1.txt, cu2.txt, cu4.txt y cu5.txt
+#           (usa SPOT-BSOL-01 APROBADO de 30 s, ana.rojas@gmail.com = ENCARGADO y pedro.vaca@hotmail.com = PROGRAMADOR).
+# OJO: crea pautas, parrillas, spots y emisiones en la base configurada (fechas de 2031).
+
+# --- ayuda ---
+larzekaobnc@gmail.com | help["7"]
+
+# --- preparacion: parrilla con 5 pausas comerciales (se publica sin materiales de programa) y una pauta con spots ---
+larzekaobnc@gmail.com | insPar["2031-05-10"]
+larzekaobnc@gmail.com | insBlo["2031-05-10","10:00","10:10","PAUSA_COMERCIAL","",""]
+larzekaobnc@gmail.com | insBlo["2031-05-10","11:00","11:10","PAUSA_COMERCIAL","",""]
+larzekaobnc@gmail.com | insBlo["2031-05-10","12:00","12:10","PAUSA_COMERCIAL","",""]
+larzekaobnc@gmail.com | insBlo["2031-05-10","13:00","13:10","PAUSA_COMERCIAL","",""]
+larzekaobnc@gmail.com | insBlo["2031-05-10","14:00","14:10","PAUSA_COMERCIAL","",""]
+larzekaobnc@gmail.com | insPau["Emision Test","Anunciante Test","2031-05-01","2031-05-31","40"]
+larzekaobnc@gmail.com | insSpo["Emision Test","SPOT-BSOL-01","2031-05-10","10:00","10:00:00"]
+larzekaobnc@gmail.com | insSpo["Emision Test","SPOT-BSOL-01","2031-05-10","10:00","10:00:30"]
+larzekaobnc@gmail.com | insSpo["Emision Test","SPOT-BSOL-01","2031-05-10","11:00","11:00:00"]
+larzekaobnc@gmail.com | insSpo["Emision Test","SPOT-BSOL-01","2031-05-10","11:00","11:05:00"]
+larzekaobnc@gmail.com | insSpo["Emision Test","SPOT-BSOL-01","2031-05-10","12:00","12:00:00"]
+
+# --- una parrilla en borrador no se concilia ---
+larzekaobnc@gmail.com | insEmi["2031-05-10","10:00","10:00:05","10:10:00","EMITIDO"]
+larzekaobnc@gmail.com | conPar["2031-05-10"]
+larzekaobnc@gmail.com | pubPar["2031-05-10"]
+larzekaobnc@gmail.com | conPar["2031-05-10"]
+
+# --- casos correctos ---
+# EMITIDO: los dos spots del bloque quedan EMITIDO; el inicio se atraso 5 s
+larzekaobnc@gmail.com | insEmi["2031-05-10","10:00","10:00:05","10:10:00","EMITIDO"]
+# PARCIAL: el corte fue a las 11:03; el spot de 11:00:00 salio, el de 11:05:00 no
+pedro.vaca@hotmail.com | insEmi["2031-05-10","11:00","11:00:00","11:03:00","parcial"]
+# NO_EMITIDO: no se envian horas; el spot de las 12:00 queda NO_EMITIDO
+larzekaobnc@gmail.com | insEmi["2031-05-10","12:00","","","NO_EMITIDO"]
+# EMITIDO con 10 s de atraso (el bloque de las 13:00 queda SIN REGISTRO)
+larzekaobnc@gmail.com | insEmi["2031-05-10","14:00","14:00:10","14:10:00","EMITIDO"]
+ana.rojas@gmail.com | conPar["2031-05-10"]
+larzekaobnc@gmail.com | mosPau["Emision Test"]
+
+# --- validaciones de insEmi (deben dar error) ---
+larzekaobnc@gmail.com | insEmi["2031-05-10","10:00","10:00:05","10:10:00","EMITIDO"]
+larzekaobnc@gmail.com | insEmi["2031-05-10","13:00","13:10:00","13:00:00","EMITIDO"]
+larzekaobnc@gmail.com | insEmi["2031-05-10","13:00","13:00:00","13:00:00","EMITIDO"]
+larzekaobnc@gmail.com | insEmi["2031-05-10","13:00","","","EMITIDO"]
+larzekaobnc@gmail.com | insEmi["2031-05-10","13:00","","","PARCIAL"]
+larzekaobnc@gmail.com | insEmi["2031-05-10","13:00","13:00:00","13:10:00","A_MEDIAS"]
+larzekaobnc@gmail.com | insEmi["2031-05-10","13:00","25:00:00","13:10:00","EMITIDO"]
+larzekaobnc@gmail.com | insEmi["2031-05-10","15:30","15:30:00","16:00:00","EMITIDO"]
+larzekaobnc@gmail.com | insEmi["2031-12-31","10:00","10:00:00","10:10:00","EMITIDO"]
+larzekaobnc@gmail.com | insEmi["fecha","hora","x","y","EMITIDO"]
+larzekaobnc@gmail.com | conPar["2031-12-31"]
+larzekaobnc@gmail.com | conPar["hoy"]
+
+# --- permisos (ENCARGADO solo consulta la conciliacion; lisAud es solo del Administrador) ---
+ana.rojas@gmail.com | insEmi["2031-05-10","13:00","13:00:00","13:10:00","EMITIDO"]
+pedro.vaca@hotmail.com | lisAud["*"]
+ana.rojas@gmail.com | lisAud["*"]
+
+# --- cierra el bloque pendiente: ahora el cumplimiento es 3 de 5 = 60 % ---
+larzekaobnc@gmail.com | insEmi["2031-05-10","13:00","13:00:00","13:10:00","EMITIDO"]
+larzekaobnc@gmail.com | conPar["2031-05-10"]
+
+# --- los spots de un bloque ya conciliado (EMITIDO / NO_EMITIDO) no se pueden quitar con eliSpo: ambos dan error ---
+larzekaobnc@gmail.com | eliSpo["2031-05-10","10:00:00"]
+larzekaobnc@gmail.com | eliSpo["2031-05-10","11:05:00"]
+
+# --- lisAud: historial (solo Administrador) ---
+larzekaobnc@gmail.com | lisAud["*"]
+larzekaobnc@gmail.com | lisAud["emision"]
+larzekaobnc@gmail.com | lisAud["EMISION"]
+larzekaobnc@gmail.com | lisAud["spot"]
+larzekaobnc@gmail.com | lisAud["material"]
+larzekaobnc@gmail.com | lisAud["usuario"]
+larzekaobnc@gmail.com | lisAud["parrilla"]
+larzekaobnc@gmail.com | lisAud["pauta"]
+larzekaobnc@gmail.com | lisAud["programa"]
+larzekaobnc@gmail.com | lisAud["bloque"]
+larzekaobnc@gmail.com | lisAud["2026-11-16"]
+larzekaobnc@gmail.com | lisAud["1999-01-01"]
+larzekaobnc@gmail.com | lisAud["2031-02-30"]
+larzekaobnc@gmail.com | lisAud["inventada"]
+larzekaobnc@gmail.com | lisAud[""]

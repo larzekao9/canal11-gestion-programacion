@@ -54,6 +54,8 @@ public class Despachador {
         PParrilla parrilla = new PParrilla();
         PValidacion validacion = new PValidacion();
         PPauta pauta = new PPauta();
+        PEmision emision = new PEmision();
+        PAuditoria auditoria = new PAuditoria();
 
         // ------------------------------------------------------------------ CU1 (implementado)
         cu(1, "Gestión de Usuarios", "Registrar y administrar a los usuarios del sistema y su rol.");
@@ -142,10 +144,10 @@ public class Despachador {
                 "Registrar lo que realmente salió al aire, compararlo con lo programado y consultar el historial de cambios.");
         cmd(7, "insEmi", "Registra la emisión real del bloque que empieza a hora_inicio. Estado: EMITIDO, PARCIAL o NO_EMITIDO",
                 p("fecha", "hora_inicio", "inicio_real", "fin_real", "estado"),
-                "insEmi[\"2026-11-20\",\"20:00\",\"20:00:05\",\"21:00:00\",\"EMITIDO\"]", ADM_PRO, null);
-        cmd(7, "conPar", "Conciliación de un día: lo programado vs. lo emitido", p("fecha"), "conPar[\"2026-11-20\"]", TODOS, null);
+                "insEmi[\"2026-11-20\",\"20:00\",\"20:00:05\",\"21:00:00\",\"EMITIDO\"]", ADM_PRO, emision::insertar);
+        cmd(7, "conPar", "Conciliación de un día: lo programado vs. lo emitido", p("fecha"), "conPar[\"2026-11-20\"]", TODOS, emision::conciliar);
         cmd(7, "lisAud", "Historial de cambios. Filtro: \"*\" = todo, una entidad (usuario, parrilla...) o una fecha",
-                p("filtro"), "lisAud[\"*\"]", ADM, null);
+                p("filtro"), "lisAud[\"*\"]", ADM, auditoria::listar);
 
         // ------------------------------------------------------------------ CU8
         cu(8, "Reportes y Estadísticas", "Reportes de programación, contenidos y pauta filtrados por rango de fechas.");
