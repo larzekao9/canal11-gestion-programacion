@@ -19,12 +19,161 @@ src/canal11/
 sql/                01_tablas.sql, 02_datos.sql   (esquema canal11)
 ```
 
+## Flujo del analizador de correos
+
+```mermaid
+flowchart TD
+    A["Cliente envía correo<br/>Asunto: comando[&quot;p1&quot;,&quot;p2&quot;]"] --> B["Servidor de correo<br/>grupo12sa@tecnoweb.org.bo"]
+    B --> C["HiloCorreo (cada N s)<br/>POP3: descarga y borra los correos"]
+    C --> D{"¿Es un comando?<br/>(no es del sistema, rebote ni spam)"}
+    D -- No --> E["Se ignora<br/>access.log: IGNORADO"]
+    D -- Sí --> F["Interprete<br/>quita RE:/Fwd:, normaliza comillas,<br/>separa parámetros (regex)"]
+    F -- "Sintaxis inválida" --> X["Respuesta de error<br/>error.log: ERROR_USUARIO"]
+    F -- Válida --> G["Despachador<br/>identifica al usuario por el correo del remitente"]
+    G --> H{"¿Existe el comando,<br/>el rol tiene permiso<br/>y la cantidad de parámetros es correcta?"}
+    H -- No --> X
+    H -- Sí --> I["Capa de negocio (N*)<br/>Validador: tipos, formatos y reglas"]
+    I -- "Datos o reglas inválidas" --> X
+    I -- OK --> J["Capa de datos (D*)<br/>PreparedStatement sobre PostgreSQL<br/>+ auditoría del cambio"]
+    J -- "Falla de BD" --> Y["Respuesta de error<br/>error.log: ERROR_SISTEMA (con traza)"]
+    J -- Éxito --> K["Respuesta HTML con los datos o el resumen"]
+    X --> S["ClienteSMTP envía la respuesta<br/>al remitente original"]
+    Y --> S
+    K --> S
+    S --> L["access.log: COMANDO y RESPUESTA"]
+```
+
+Capas: `comunicacion` (POP3/SMTP con sockets) → `presentacion` (intérprete, despachador, HTML) →
+`negocio` (validaciones y reglas) → `datos` (SQL). Cada capa solo llama a la siguiente.
+
+## Base de datos (esquema `canal11` en PostgreSQL)
+
+```mermaid
+erDiagram
+    USUARIO ||--o{ MATERIAL : "registra / valida"
+    USUARIO ||--o{ PARRILLA : crea
+    USUARIO ||--o{ EMISION : registra
+    USUARIO ||--o{ AUDITORIA : realiza
+    PROGRAMA |o--o{ MATERIAL : "tiene"
+    PROGRAMA |o--o{ BLOQUE : "se emite en"
+    PARRILLA ||--o{ BLOQUE : contiene
+    MATERIAL |o--o{ BLOQUE : "se emite en"
+    BLOQUE ||--o| EMISION : "se concilia con"
+    BLOQUE ||--o{ SPOT : "aloja (pausa comercial)"
+    PAUTA ||--o{ SPOT : "agrupa"
+    MATERIAL ||--o{ SPOT : "es el aviso"
+
+    USUARIO {
+        int id_usuario PK
+        string ci UK
+        string email UK
+        string rol
+        bool activo
+    }
+    PROGRAMA {
+        int id_programa PK
+        string nombre UK
+        string tipo
+        int duracion_min
+        bool activo
+    }
+    MATERIAL {
+        int id_material PK
+        string codigo UK
+        string tipo
+        int duracion_seg
+        string ruta UK
+        string estado
+        int registrado_por FK
+        int validado_por FK
+    }
+    PARRILLA {
+        int id_parrilla PK
+        date fecha UK
+        string estado
+        int creado_por FK
+    }
+    BLOQUE {
+        int id_bloque PK
+        int id_parrilla FK
+        int id_programa FK
+        int id_material FK
+        time hora_inicio
+        time hora_fin
+        string tipo
+    }
+    PAUTA {
+        int id_pauta PK
+        string nombre UK
+        string anunciante
+        date fecha_inicio
+        date fecha_fin
+        int max_pases
+    }
+    SPOT {
+        int id_spot PK
+        int id_pauta FK
+        int id_material FK
+        int id_bloque FK
+        time hora
+        string estado
+    }
+    EMISION {
+        int id_emision PK
+        int id_bloque FK
+        timestamp inicio_real
+        timestamp fin_real
+        string estado
+    }
+    AUDITORIA {
+        int id_auditoria PK
+        int id_usuario FK
+        string accion
+        string entidad
+        string comando
+        timestamp fecha
+    }
+```
+
+| Tabla | Para qué sirve | Claves y restricciones principales |
+|---|---|---|
+| `usuario` | Personas que usan el sistema; el rol (ADMINISTRADOR, PROGRAMADOR, ENCARGADO) define sus permisos | `ci` y `email` únicos; baja lógica (`activo`) |
+| `programa` | Catálogo de programas (noticiero, película, serie...) | `nombre` único; duración > 0 |
+| `material` | Video que se emite: programa, spot o promo; pasa por PENDIENTE → APROBADO/RECHAZADO | `codigo` y `ruta` únicos; duración > 0 |
+| `parrilla` | Programación de un día (BORRADOR o PUBLICADA) | una por `fecha` |
+| `bloque` | Franja horaria de la parrilla: programa o pausa comercial | `hora_fin > hora_inicio`; sin solapamientos (regla de negocio) |
+| `pauta` | Contrato publicitario de un anunciante con vigencia y máximo de pases | `nombre` único; `fecha_fin >= fecha_inicio` |
+| `spot` | Aviso ubicado en una pausa comercial | un spot por (`bloque`, `hora`) |
+| `emision` | Lo realmente emitido de cada bloque (EMITIDO, PARCIAL, NO_EMITIDO) | una por bloque |
+| `auditoria` | Historial de cada cambio: quién, qué, cuándo y con qué comando | índice por (`entidad`, `id_entidad`) |
+
+Script completo en [`sql/01_tablas.sql`](sql/01_tablas.sql); `--instalar` lo ejecuta y crea además el administrador inicial.
+
+## Seguridad y registro
+
+- **Inyección SQL:** toda consulta usa `PreparedStatement`; ningún dato del correo se concatena al SQL.
+- **Validación:** `Validador` revisa tipos, formatos, rangos y reglas de negocio **antes** de tocar la base y devuelve todos los errores juntos.
+- **Parsing robusto:** tolera espacios extra, comillas tipográficas (celulares, Word), `RE:`/`Fwd:`, UTF-8 y comas dentro de comillas.
+- **Permisos por rol:** el rol del remitente decide qué comandos puede usar.
+- **Logs locales** (carpeta `logs/`, creada sola; no se sube a git):
+  - `logs/access.log`: cada correo recibido (`CORREO`), ignorado (`IGNORADO`), comando ejecutado con resultado y tiempo (`COMANDO`) y respuesta enviada (`RESPUESTA`).
+  - `logs/error.log`: errores de uso (`ERROR_USUARIO`: sintaxis, permisos, reglas) y fallos del sistema (`ERROR_SISTEMA`: base de datos, POP3, SMTP) con la traza.
+  - Formato: `2026-11-20 10:15:30 | COMANDO | de=ana@gmail.com | asunto=lisPro["*"] | resultado=OK | 42 ms`
+- **Auditoría en base de datos:** cada alta, cambio o baja queda en `auditoria`; el administrador la consulta con `lisAud`.
+
 ## Puesta en marcha
 
+Requisitos: Java 17 o superior y el driver incluido en `lib/`.
+
 1. Copiar `config.properties.example` como `config.properties` y completar las contraseñas.
-2. `compilar.bat`
-3. `ejecutar.bat --instalar` — crea el esquema `canal11` y sus tablas en `db_grupo12sa`.
-4. `ejecutar.bat` — revisa `grupo12sa@tecnoweb.org.bo` cada 10 s y responde.
+2. Compilar: `compilar.bat` (Windows) o `./compilar.sh` (Linux/macOS).
+3. `ejecutar.bat --instalar` (o `./ejecutar.sh --instalar`) — crea el esquema `canal11` y sus tablas en `db_grupo12sa`.
+4. `ejecutar.bat` (o `./ejecutar.sh`) — revisa `grupo12sa@tecnoweb.org.bo` cada 10 s y responde.
+
+Todos los ejemplos de abajo usan `ejecutar.bat`; en Linux/macOS es `./ejecutar.sh` con los mismos argumentos.
+
+Si el servidor del curso no es alcanzable directamente, se puede usar un túnel SSH y apuntar `config.properties` a `localhost`
+(puertos del túnel en `pop3.puerto`, `smtp.puerto` y `db.puerto`).
 
 Herramientas de prueba:
 
@@ -73,10 +222,16 @@ material por código, parrilla por fecha, bloque por fecha + hora, pauta por nom
 | Fase | Contenido | Estado |
 |---|---|---|
 | 0 | Infraestructura: sockets POP3/SMTP, hilo de verificación de correo, intérprete, plantilla HTML, `help`, catálogo de comandos, tablas | ✅ |
-| 1 | CU1 Usuarios (con reactivación) + auditoría + validaciones + correos de cualquier proveedor + `RE:`/`Fwd:` + sugerencia de comando | ✅ (falta prueba en el servidor del curso) |
-| 2 | CU2 Programas, CU4 Materiales | ✅ (compila; falta correr `pruebas/cu2.txt` y `cu4.txt` contra la BD) |
-| 3 | CU3 Parrilla | ✅ (compila; falta correr `pruebas/cu3.txt` contra la BD) |
-| 4 | CU5 Validación | ✅ (compila; falta correr `pruebas/cu5.txt` contra la BD) |
-| 5 | CU6 Pauta y spots | ✅ (compila; falta correr `pruebas/cu6.txt` contra la BD) |
-| 6 | CU7 Emisión y conciliación | ✅ (compila; falta correr `pruebas/cu7.txt` contra la BD) |
-| 7 | CU8 Reportes | ✅ (compila; falta correr `pruebas/cu8.txt` contra la BD) |
+| 1 | CU1 Usuarios (con reactivación) + auditoría + validaciones + correos de cualquier proveedor + `RE:`/`Fwd:` + sugerencia de comando | ✅ |
+| 2 | CU2 Programas, CU4 Materiales | ✅ |
+| 3 | CU3 Parrilla | ✅ |
+| 4 | CU5 Validación | ✅ |
+| 5 | CU6 Pauta y spots | ✅ |
+| 6 | CU7 Emisión y conciliación | ✅ |
+| 7 | CU8 Reportes | ✅ |
+| 8 | Logs `access.log` / `error.log` | ✅ |
+
+Las baterías `pruebas/cu1.txt` a `cu8.txt` se corrieron completas contra una base PostgreSQL local con los resultados esperados.
+Pendiente: la prueba de extremo a extremo con el correo real del servidor del curso (POP3/SMTP).
+
+> Las baterías `--lote` crean datos de prueba (fechas de 2030 y 2031): correrlas solo contra una base local o de pruebas.
