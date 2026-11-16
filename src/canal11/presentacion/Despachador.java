@@ -49,6 +49,7 @@ public class Despachador {
      */
     private void registrarCasosDeUso() {
         PUsuario usuario = new PUsuario();
+        PPrograma programa = new PPrograma();
 
         // ------------------------------------------------------------------ CU1 (implementado)
         cu(1, "Gestión de Usuarios", "Registrar y administrar a los usuarios del sistema y su rol.");
@@ -70,16 +71,16 @@ public class Despachador {
         // ------------------------------------------------------------------ CU2
         cu(2, "Gestión de Catálogo de Programas", "Mantener el catálogo de programas que se emiten en el canal.");
         cmd(2, "lisPro", "Lista los programas. Filtro: \"*\" = todos, o un tipo (NOTICIERO, PELICULA...)",
-                p("filtro"), "lisPro[\"*\"]", TODOS, null);
-        cmd(2, "mosPro", "Muestra un programa", p("programa (nombre)"), "mosPro[\"Noticiero Central\"]", TODOS, null);
+                p("filtro"), "lisPro[\"*\"]", TODOS, programa::listar);
+        cmd(2, "mosPro", "Muestra un programa", p("programa (nombre)"), "mosPro[\"Noticiero Central\"]", TODOS, programa::mostrar);
         cmd(2, "insPro", "Registra un programa. Tipo: NOTICIERO, REVISTA, PELICULA, DOCUMENTAL, SERIE u OTRO",
                 p("nombre", "descripcion", "tipo", "duracion_min", "genero", "clasificacion"),
-                "insPro[\"Noticiero Central\",\"Edicion de la noche\",\"NOTICIERO\",\"60\",\"Informativo\",\"ATP\"]", ADM_PRO, null);
+                "insPro[\"Noticiero Central\",\"Edicion de la noche\",\"NOTICIERO\",\"60\",\"Informativo\",\"ATP\"]", ADM_PRO, programa::insertar);
         cmd(2, "modPro", "Modifica un programa: primero el programa, luego todos sus datos nuevos",
                 p("programa (nombre)", "nombre", "descripcion", "tipo", "duracion_min", "genero", "clasificacion"),
                 "modPro[\"Noticiero Central\",\"Noticiero Central\",\"Edicion de la noche\",\"NOTICIERO\",\"90\",\"Informativo\",\"ATP\"]",
-                ADM_PRO, null);
-        cmd(2, "eliPro", "Da de baja un programa del catálogo", p("programa (nombre)"), "eliPro[\"Noticiero Central\"]", ADM_PRO, null);
+                ADM_PRO, programa::modificar);
+        cmd(2, "eliPro", "Da de baja un programa del catálogo", p("programa (nombre)"), "eliPro[\"Noticiero Central\"]", ADM_PRO, programa::eliminar);
 
         // ------------------------------------------------------------------ CU3
         cu(3, "Gestión de Confeccionar y Controlar la Parrilla de Programación",

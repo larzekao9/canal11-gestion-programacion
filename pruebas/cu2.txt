@@ -1,0 +1,42 @@
+# Pruebas del CU2 - Catalogo de Programas
+# Formato de cada linea:   remitente | asunto
+# Ejecutar:  ejecutar.bat --lote pruebas\cu2.txt     (respuestas en salida\01.html, 02.html, ...)
+# Requiere: ejecutar.bat --instalar y haber corrido pruebas\cu1.txt (usa ana.rojas@gmail.com como ENCARGADO)
+# OJO: crea, modifica y da de baja programas en la base configurada.
+
+# --- ayuda ---
+larzekaobnc@gmail.com | help["2"]
+
+# --- casos correctos ---
+larzekaobnc@gmail.com | insPro["Noticiero Central","Edicion de la noche","NOTICIERO","60","Informativo","ATP"]
+larzekaobnc@gmail.com | insPro["  Cine   de Oro ","","pelicula","120","","+12"]
+larzekaobnc@gmail.com | lisPro["*"]
+larzekaobnc@gmail.com | lisPro["NOTICIERO"]
+larzekaobnc@gmail.com | lisPro["cine"]
+larzekaobnc@gmail.com | mosPro["Noticiero Central"]
+larzekaobnc@gmail.com | mosPro["noticiero central"]
+larzekaobnc@gmail.com | modPro["Noticiero Central","Noticiero Central","Edicion de la noche","NOTICIERO","90","Informativo","ATP"]
+
+# --- validaciones (deben dar error) ---
+larzekaobnc@gmail.com | insPro["","","TELENOVELA","0","",""]
+larzekaobnc@gmail.com | insPro["Programa X","","SERIE","abc","",""]
+larzekaobnc@gmail.com | insPro["Programa X","","SERIE","601","",""]
+larzekaobnc@gmail.com | insPro["Noticiero Central","","NOTICIERO","60","",""]
+larzekaobnc@gmail.com | insPro["NOTICIERO CENTRAL","","NOTICIERO","60","",""]
+larzekaobnc@gmail.com | insPro["Solo","Pocos parametros"]
+larzekaobnc@gmail.com | mosPro["No Existe"]
+larzekaobnc@gmail.com | modPro["Cine de Oro","Noticiero Central","","PELICULA","120","",""]
+
+# --- permisos ---
+ana.rojas@gmail.com | lisPro["*"]
+ana.rojas@gmail.com | insPro["Prohibido","","OTRO","30","",""]
+ana.rojas@gmail.com | eliPro["Cine de Oro"]
+
+# --- baja ---
+larzekaobnc@gmail.com | eliPro["Cine de Oro"]
+larzekaobnc@gmail.com | eliPro["Cine de Oro"]
+larzekaobnc@gmail.com | eliPro["No Existe"]
+larzekaobnc@gmail.com | mosPro["Cine de Oro"]
+
+# --- errores de escritura ---
+larzekaobnc@gmail.com | lisPrg["*"]
