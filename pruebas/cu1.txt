@@ -1,0 +1,55 @@
+# Pruebas del CU1 - Gestion de Usuarios
+# Formato de cada linea:   remitente | asunto
+# Ejecutar:  ejecutar.bat --lote pruebas\cu1.txt     (las respuestas quedan en salida\01.html, 02.html, ...)
+# Requiere haber hecho antes: ejecutar.bat --instalar
+# OJO: crea, modifica y da de baja usuarios en la base configurada.
+
+# --- ayuda ---
+larzekaobnc@gmail.com | help
+larzekaobnc@gmail.com | help["1"]
+
+# --- casos correctos ---
+larzekaobnc@gmail.com | lisUsu["*"]
+larzekaobnc@gmail.com | insUsu["7654321","  Ana   Maria ","Rojas","ana.rojas@gmail.com","71234567","programador"]
+larzekaobnc@gmail.com | mosUsu["7654321"]
+larzekaobnc@gmail.com | mosUsu["ana.rojas@gmail.com"]
+larzekaobnc@gmail.com | modUsu["7654321","7654321","Ana Maria","Rojas Paz","ana.rojas@gmail.com","71234567","ENCARGADO"]
+larzekaobnc@gmail.com | lisUsu["encargado"]
+larzekaobnc@gmail.com | lisUsu["rojas"]
+
+# --- validaciones (deben dar error) ---
+larzekaobnc@gmail.com | insUsu["12","Ana3","","correo-malo","abc","JEFE"]
+larzekaobnc@gmail.com | insUsu["7654321","Ana","Rojas"]
+larzekaobnc@gmail.com | insUsu["7654321","Otra","Persona","ana.rojas@gmail.com","","ENCARGADO"]
+larzekaobnc@gmail.com | mosUsu["9999999"]
+larzekaobnc@gmail.com | mosUsu[""]
+larzekaobnc@gmail.com | borrarTodo["*"]
+larzekaobnc@gmail.com | lisUsu["abc]
+
+# --- permisos y reglas ---
+ana.rojas@gmail.com | help
+ana.rojas@gmail.com | lisUsu["*"]
+larzekaobnc@gmail.com | modUsu["larzekaobnc@gmail.com","0000001","Luis Angel","Arze Kao","larzekaobnc@gmail.com","","PROGRAMADOR"]
+larzekaobnc@gmail.com | eliUsu["larzekaobnc@gmail.com"]
+larzekaobnc@gmail.com | eliUsu["7654321"]
+larzekaobnc@gmail.com | eliUsu["7654321"]
+ana.rojas@gmail.com | help
+desconocido@gmail.com | help
+
+# --- reactivacion ---
+larzekaobnc@gmail.com | mosUsu["7654321"]
+larzekaobnc@gmail.com | actUsu["7654321"]
+larzekaobnc@gmail.com | actUsu["7654321"]
+ana.rojas@gmail.com | help
+
+# --- asuntos de respuesta/reenvio y errores de escritura ---
+larzekaobnc@gmail.com | RE: lisUsu["*"]
+larzekaobnc@gmail.com | Fwd: RV: mosUsu["ana.rojas@gmail.com"]
+larzekaobnc@gmail.com | lisUsr["*"]
+larzekaobnc@gmail.com | mosUsuario["7654321"]
+
+# --- otros proveedores de correo ---
+larzekaobnc@gmail.com | insUsu["8888888","José","Pérez","jose.perez@ficct.uagrm.edu.bo","","ENCARGADO"]
+larzekaobnc@gmail.com | insUsu["9999999","Pedro","Vaca","Pedro.Vaca@Hotmail.com","","PROGRAMADOR"]
+jose.perez@ficct.uagrm.edu.bo | help
+PEDRO.VACA@hotmail.com | help["2"]
