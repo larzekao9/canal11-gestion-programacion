@@ -50,6 +50,7 @@ public class Despachador {
     private void registrarCasosDeUso() {
         PUsuario usuario = new PUsuario();
         PPrograma programa = new PPrograma();
+        PMaterial material = new PMaterial();
 
         // ------------------------------------------------------------------ CU1 (implementado)
         cu(1, "Gestión de Usuarios", "Registrar y administrar a los usuarios del sistema y su rol.");
@@ -99,17 +100,17 @@ public class Despachador {
         // ------------------------------------------------------------------ CU4
         cu(4, "Gestión de Materiales de Video", "Registrar los videos (programas, spots, promos) con un código único y evitar duplicados.");
         cmd(4, "lisMat", "Lista los materiales. Filtro: \"*\" = todos, un estado (PENDIENTE...) o un tipo (SPOT...)",
-                p("filtro"), "lisMat[\"PENDIENTE\"]", TODOS, null);
-        cmd(4, "mosMat", "Muestra un material", p("material (código)"), "mosMat[\"NOT-2011\"]", TODOS, null);
+                p("filtro"), "lisMat[\"PENDIENTE\"]", TODOS, material::listar);
+        cmd(4, "mosMat", "Muestra un material", p("material (código)"), "mosMat[\"NOT-2011\"]", TODOS, material::mostrar);
         cmd(4, "insMat", "Registra un material. Tipo: PROGRAMA, SPOT o PROMO. Programa puede ir vacío \"\" (spots)",
                 p("codigo", "titulo", "tipo", "programa (nombre)", "duracion_seg", "formato", "ruta"),
                 "insMat[\"NOT-2011\",\"Noticiero 20 de noviembre\",\"PROGRAMA\",\"Noticiero Central\",\"3600\",\"MP4\",\"/prensa/not_2011.mp4\"]",
-                ADM_ENC, null);
+                ADM_ENC, material::insertar);
         cmd(4, "modMat", "Modifica un material: primero el código, luego todos sus datos nuevos",
                 p("material (código)", "titulo", "tipo", "programa (nombre)", "duracion_seg", "formato", "ruta"),
                 "modMat[\"NOT-2011\",\"Noticiero 20 de noviembre\",\"PROGRAMA\",\"Noticiero Central\",\"3580\",\"MP4\",\"/prensa/not_2011.mp4\"]",
-                ADM_ENC, null);
-        cmd(4, "eliMat", "Da de baja un material", p("material (código)"), "eliMat[\"NOT-2011\"]", ADM_ENC, null);
+                ADM_ENC, material::modificar);
+        cmd(4, "eliMat", "Da de baja un material", p("material (código)"), "eliMat[\"NOT-2011\"]", ADM_ENC, material::eliminar);
 
         // ------------------------------------------------------------------ CU5
         cu(5, "Gestión de Validar Estado de Emisión", "Aprobar o rechazar materiales y ver si cada bloque está listo para salir al aire.");

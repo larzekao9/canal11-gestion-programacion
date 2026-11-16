@@ -1,0 +1,47 @@
+# Pruebas del CU4 - Materiales de Video
+# Formato de cada linea:   remitente | asunto
+# Ejecutar:  ejecutar.bat --lote pruebas\cu4.txt     (respuestas en salida\01.html, 02.html, ...)
+# Requiere: ejecutar.bat --instalar, pruebas\cu1.txt (ana.rojas@gmail.com = ENCARGADO tras modUsu)
+#           y pruebas\cu2.txt (programas "Noticiero Central" activo y "Cine de Oro" dado de baja).
+# OJO: crea, modifica y da de baja materiales en la base configurada.
+
+# --- ayuda ---
+larzekaobnc@gmail.com | help["4"]
+
+# --- casos correctos ---
+larzekaobnc@gmail.com | insMat["not-2011","Noticiero 20 de noviembre","PROGRAMA","Noticiero Central","3600","MP4","/prensa/not_2011.mp4"]
+larzekaobnc@gmail.com | insMat["SPOT-BSOL-01","Spot Navidad Banco Sol","SPOT","","30","MOV","/spots/bsol_01.mov"]
+ana.rojas@gmail.com | insMat["PROMO-01","Promo Noticiero","promo","Noticiero Central","20","MXF","/promos/not.mxf"]
+larzekaobnc@gmail.com | lisMat["*"]
+larzekaobnc@gmail.com | lisMat["PENDIENTE"]
+larzekaobnc@gmail.com | lisMat["SPOT"]
+larzekaobnc@gmail.com | lisMat["banco"]
+larzekaobnc@gmail.com | mosMat["NOT-2011"]
+larzekaobnc@gmail.com | mosMat["not-2011"]
+larzekaobnc@gmail.com | modMat["NOT-2011","Noticiero 20 de noviembre","PROGRAMA","Noticiero Central","3580","MP4","/prensa/not_2011.mp4"]
+
+# --- validaciones (deben dar error) ---
+larzekaobnc@gmail.com | insMat["N","","DOCUMENTAL","","0","AVI",""]
+larzekaobnc@gmail.com | insMat["NOT 2012","Sin programa","PROGRAMA","","60","MP4","/prensa/x.mp4"]
+larzekaobnc@gmail.com | insMat["NOT-2012","Programa inexistente","PROGRAMA","No Existe","60","MP4","/prensa/x.mp4"]
+larzekaobnc@gmail.com | insMat["NOT-2012","Programa dado de baja","PROGRAMA","Cine de Oro","60","MP4","/prensa/x.mp4"]
+larzekaobnc@gmail.com | insMat["NOT-2011","Codigo repetido","SPOT","","30","MP4","/prensa/otro.mp4"]
+larzekaobnc@gmail.com | insMat["NOT-2013","Ruta repetida","SPOT","","30","MP4","/prensa/not_2011.mp4"]
+larzekaobnc@gmail.com | insMat["NOT-2014","Muy largo","SPOT","","86401","MP4","/prensa/y.mp4"]
+larzekaobnc@gmail.com | mosMat["NO-EXISTE"]
+larzekaobnc@gmail.com | modMat["NO-EXISTE","t","SPOT","","30","MP4","/z.mp4"]
+larzekaobnc@gmail.com | modMat["SPOT-BSOL-01","Spot","SPOT","","30","MOV","/prensa/not_2011.mp4"]
+
+# --- permisos (PROGRAMADOR no gestiona materiales) ---
+# Cree antes un PROGRAMADOR, ej: insUsu["5555555","Pedro","Vaca","pedro.vaca@hotmail.com","","PROGRAMADOR"]
+pedro.vaca@hotmail.com | lisMat["*"]
+pedro.vaca@hotmail.com | insMat["NOT-9","x","SPOT","","30","MP4","/p.mp4"]
+
+# --- baja ---
+larzekaobnc@gmail.com | eliMat["PROMO-01"]
+larzekaobnc@gmail.com | eliMat["PROMO-01"]
+larzekaobnc@gmail.com | eliMat["NO-EXISTE"]
+
+# --- reglas con CU5: modificar ruta/duracion de un APROBADO lo vuelve a PENDIENTE (ver tambien pruebas\cu5.txt) ---
+# larzekaobnc@gmail.com | valMat["NOT-2011","APROBADO","Correcto"]
+# larzekaobnc@gmail.com | modMat["NOT-2011","Noticiero 20 de noviembre","PROGRAMA","Noticiero Central","3500","MP4","/prensa/not_2011.mp4"]
