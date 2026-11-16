@@ -1,0 +1,52 @@
+# Pruebas del CU8 - Reportes y Estadisticas
+# Formato de cada linea:   remitente | asunto
+# Ejecutar:  ejecutar.bat --lote pruebas\cu8.txt     (respuestas en salida\01.html, 02.html, ...)
+# Requiere: --instalar y haber corrido TODAS las pruebas anteriores en orden: cu1, cu2, cu4, cu5, cu3, cu6 y cu7
+#           (los reportes leen sus datos: parrillas de 2030 y 2031, materiales, spots y emisiones).
+#           ana.rojas@gmail.com = ENCARGADO y pedro.vaca@hotmail.com = PROGRAMADOR.
+# Estos reportes solo leen: no modifican la base.
+
+# --- ayuda ---
+larzekaobnc@gmail.com | help["8"]
+
+# --- casos correctos (repMat cuenta lo registrado "hoy" por las pruebas: si hoy no cae en 2026, cambie ese rango) ---
+larzekaobnc@gmail.com | repPro["2031-01-01","2031-12-31"]
+larzekaobnc@gmail.com | repMat["2026-01-01","2026-12-31"]
+larzekaobnc@gmail.com | repPau["2031-01-01","2031-12-31"]
+larzekaobnc@gmail.com | repCum["2031-01-01","2031-12-31"]
+
+# --- rangos acotados: el CU7 dejo emisiones el 2031-05-10 (EMITIDO x3, PARCIAL x1, NO_EMITIDO x1 = 60 %) ---
+larzekaobnc@gmail.com | repCum["2031-05-10","2031-05-10"]
+larzekaobnc@gmail.com | repPau["2031-05-01","2031-05-31"]
+larzekaobnc@gmail.com | repPro["2031-03-10","2031-03-10"]
+
+# --- rangos sin datos (responde que no hay informacion, sin error) ---
+larzekaobnc@gmail.com | repPro["1999-01-01","1999-01-31"]
+larzekaobnc@gmail.com | repMat["1999-01-01","1999-01-31"]
+larzekaobnc@gmail.com | repPau["1999-01-01","1999-01-31"]
+larzekaobnc@gmail.com | repCum["1999-01-01","1999-01-31"]
+
+# --- permisos: repMat es de Admin/Encargado; los otros tres, de Admin/Programador ---
+ana.rojas@gmail.com | repMat["2026-01-01","2026-12-31"]
+ana.rojas@gmail.com | repPro["2031-01-01","2031-12-31"]
+pedro.vaca@hotmail.com | repPro["2031-01-01","2031-12-31"]
+pedro.vaca@hotmail.com | repPau["2031-01-01","2031-12-31"]
+pedro.vaca@hotmail.com | repCum["2031-01-01","2031-12-31"]
+pedro.vaca@hotmail.com | repMat["2026-01-01","2026-12-31"]
+ana.rojas@gmail.com | repCum["2031-01-01","2031-12-31"]
+ana.rojas@gmail.com | repPau["2031-01-01","2031-12-31"]
+
+# --- validaciones (deben dar error) ---
+larzekaobnc@gmail.com | repPro["2031-12-31","2031-01-01"]
+larzekaobnc@gmail.com | repPro["2030-01-01","2031-12-31"]
+larzekaobnc@gmail.com | repPro["2031-01-01","2032-01-02"]
+larzekaobnc@gmail.com | repPro["ayer","hoy"]
+larzekaobnc@gmail.com | repPro["2031-02-30","2031-13-01"]
+larzekaobnc@gmail.com | repPro["","2031-01-01"]
+larzekaobnc@gmail.com | repMat["2031-01-01"]
+larzekaobnc@gmail.com | repCum["2031-01-01","2031-12-31","extra"]
+
+# --- limite exacto: 366 dias se acepta (2031-01-01 a 2032-01-01 y un anio bisiesto), 367 se rechaza ---
+larzekaobnc@gmail.com | repPro["2031-01-01","2032-01-01"]
+larzekaobnc@gmail.com | repCum["2028-01-01","2028-12-31"]
+larzekaobnc@gmail.com | repCum["2028-01-01","2029-01-01"]

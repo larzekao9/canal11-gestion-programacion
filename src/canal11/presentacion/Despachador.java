@@ -56,6 +56,7 @@ public class Despachador {
         PPauta pauta = new PPauta();
         PEmision emision = new PEmision();
         PAuditoria auditoria = new PAuditoria();
+        PReporte reporte = new PReporte();
 
         // ------------------------------------------------------------------ CU1 (implementado)
         cu(1, "Gestión de Usuarios", "Registrar y administrar a los usuarios del sistema y su rol.");
@@ -151,10 +152,10 @@ public class Despachador {
 
         // ------------------------------------------------------------------ CU8
         cu(8, "Reportes y Estadísticas", "Reportes de programación, contenidos y pauta filtrados por rango de fechas.");
-        cmd(8, "repPro", "Horas programadas por tipo de programa", p("desde", "hasta"), "repPro[\"2026-11-01\",\"2026-11-30\"]", ADM_PRO, null);
-        cmd(8, "repMat", "Materiales por estado y tipo", p("desde", "hasta"), "repMat[\"2026-11-01\",\"2026-11-30\"]", ADM_ENC, null);
-        cmd(8, "repPau", "Spots programados y emitidos por anunciante", p("desde", "hasta"), "repPau[\"2026-11-01\",\"2026-11-30\"]", ADM_PRO, null);
-        cmd(8, "repCum", "Porcentaje de cumplimiento: programado vs. emitido", p("desde", "hasta"), "repCum[\"2026-11-01\",\"2026-11-30\"]", ADM_PRO, null);
+        cmd(8, "repPro", "Horas programadas por tipo de programa", p("desde", "hasta"), "repPro[\"2026-11-01\",\"2026-11-30\"]", ADM_PRO, reporte::horasPorPrograma);
+        cmd(8, "repMat", "Materiales por estado y tipo", p("desde", "hasta"), "repMat[\"2026-11-01\",\"2026-11-30\"]", ADM_ENC, reporte::materiales);
+        cmd(8, "repPau", "Spots programados y emitidos por anunciante", p("desde", "hasta"), "repPau[\"2026-11-01\",\"2026-11-30\"]", ADM_PRO, reporte::spotsPorAnunciante);
+        cmd(8, "repCum", "Porcentaje de cumplimiento: programado vs. emitido", p("desde", "hasta"), "repCum[\"2026-11-01\",\"2026-11-30\"]", ADM_PRO, reporte::cumplimiento);
     }
 
     /** Procesa un correo. Nunca lanza excepciones: siempre devuelve una respuesta para el remitente. */
