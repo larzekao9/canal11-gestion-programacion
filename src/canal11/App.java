@@ -5,6 +5,7 @@ import canal11.comunicacion.ClienteSMTP;
 import canal11.comunicacion.Correo;
 import canal11.comunicacion.HiloCorreo;
 import canal11.config.Config;
+import canal11.config.Registro;
 import canal11.datos.Instalador;
 import canal11.presentacion.Despachador;
 import canal11.presentacion.Interprete;
@@ -84,8 +85,10 @@ public class App {
             String pos = "[" + n + "/" + correos.size() + "] ";
             if (!debeResponderse(correo)) {
                 log("  " + pos + "Ignorado (no es comando o es del sistema): " + correo.getRemitente() + " | " + correo.getAsunto());
+                Registro.acceso("IGNORADO", "de=" + correo.getRemitente() + " | asunto=" + correo.getAsunto());
                 continue;
             }
+            Registro.acceso("CORREO", "recibido de=" + correo.getRemitente() + " | asunto=" + correo.getAsunto());
             log("  " + pos + "De: " + correo.getRemitente());
             log("        Asunto: " + correo.getAsunto());
             long inicio = System.currentTimeMillis();
@@ -93,8 +96,10 @@ public class App {
             try {
                 smtp.enviar(correo.getRemitente(), "Canal 11 | " + r.getTitulo(), r.getHtml());
                 log("        Respondido: " + r.getTitulo() + " (" + (System.currentTimeMillis() - inicio) + " ms)");
+                Registro.acceso("RESPUESTA", "enviada a=" + correo.getRemitente() + " | " + r.getTitulo());
             } catch (IOException e) {
                 log("        NO se pudo enviar la respuesta: " + e.getMessage());
+                Registro.errorSistema("SMTP - no se pudo enviar la respuesta a " + correo.getRemitente(), e);
             }
         }
     }

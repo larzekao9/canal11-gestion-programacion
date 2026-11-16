@@ -1,5 +1,6 @@
 package canal11.presentacion;
 
+import canal11.config.Registro;
 import canal11.datos.ErrorBD;
 import canal11.negocio.NUsuario;
 import canal11.negocio.NegocioException;
@@ -160,6 +161,14 @@ public class Despachador {
 
     /** Procesa un correo. Nunca lanza excepciones: siempre devuelve una respuesta para el remitente. */
     public Respuesta procesar(String asunto, String remitente) {
+        long inicio = System.currentTimeMillis();
+        Respuesta r = ejecutar(asunto, remitente);
+        Registro.comando(remitente, asunto, r.getTitulo().startsWith("Error") ? "ERROR" : "OK", System.currentTimeMillis() - inicio);
+        return r;
+    }
+
+    /** Interpreta, valida permisos y ejecuta el comando. Los errores se registran en error.log y se devuelven como respuesta. */
+    private Respuesta ejecutar(String asunto, String remitente) {
         Usuario usuario = null;
         try {
             Interprete cmd = Interprete.leer(asunto);
@@ -186,14 +195,18 @@ public class Despachador {
             }
             return envolver(def.getAccion().ejecutar(usuario, cmd.getParametros()), usuario);
         } catch (ComandoException e) {
+            Registro.errorUsuario(remitente, asunto, e.getMessage());
             return error(asunto, List.of(e.getMessage()), usuario);
         } catch (NegocioException e) {
+            Registro.errorUsuario(remitente, asunto, String.join(" ; ", e.getErrores()));
             return error(asunto, e.getErrores(), usuario);
         } catch (SQLException e) {
             System.err.println("[BD] " + e.getSQLState() + " " + e.getMessage());
+            Registro.errorSistema("BD (SQLState " + e.getSQLState() + ") | de=" + remitente + " | asunto=" + asunto, e);
             return error(asunto, List.of(Html.esc(ErrorBD.traducir(e))), usuario);
         } catch (Exception e) {
             System.err.println("[Error] " + e);
+            Registro.errorSistema("Inesperado | de=" + remitente + " | asunto=" + asunto, e);
             return error(asunto, List.of("Ocurrió un error inesperado al procesar el comando."), usuario);
         }
     }

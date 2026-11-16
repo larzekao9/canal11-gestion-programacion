@@ -1,5 +1,7 @@
 package canal11.comunicacion;
 
+import canal11.config.Registro;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,8 +43,10 @@ public class HiloCorreo implements Runnable {
                 }
             } catch (IOException e) {
                 System.err.println("[HiloCorreo] No se pudo revisar el buzon (" + host + ":" + puerto + "): " + e.getMessage());
+                Registro.errorSistema("POP3 - no se pudo revisar el buzon (" + host + ":" + puerto + ")", e);
             } catch (RuntimeException e) {
                 System.err.println("[HiloCorreo] Error inesperado: " + e);
+                Registro.errorSistema("HiloCorreo - error inesperado", e);
             }
             try {
                 Thread.sleep(intervaloSegundos * 1000L);
