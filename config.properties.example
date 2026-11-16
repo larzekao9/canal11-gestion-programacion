@@ -1,0 +1,23 @@
+# Copiar este archivo como config.properties y completar las contrasenas.
+# config.properties NO se sube a git (esta en .gitignore).
+
+# --- Correo del grupo (servidor del curso) ---
+mail.usuario=grupo12sa
+mail.password=CAMBIAR
+mail.direccion=grupo12sa@tecnoweb.org.bo
+pop3.host=mail.tecnoweb.org.bo
+pop3.puerto=110
+smtp.host=mail.tecnoweb.org.bo
+smtp.puerto=25
+
+# --- Base de datos del grupo (servidor del curso) ---
+db.host=db.tecnoweb.org.bo
+db.puerto=5432
+db.nombre=db_grupo12sa
+db.usuario=grupo12sa
+db.password=CAMBIAR
+# Las tablas del sistema se crean en este esquema (separadas de otras tablas de la base)
+db.esquema=canal11
+
+# Cada cuantos segundos se revisa el buzon
+app.intervalo=10
