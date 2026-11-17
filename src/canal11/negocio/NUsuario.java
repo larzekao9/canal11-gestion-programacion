@@ -10,7 +10,7 @@ import java.util.List;
  *  - Solo el Administrador gestiona usuarios (el permiso lo controla el Despachador).
  *  - Un usuario se referencia por su CI, su email o su ID (no hace falta saber el ID).
  *  - CI y email son unicos; el email debe ser valido (es desde donde el usuario envia los comandos).
- *  - Nombre y apellido solo letras. Rol: ADMINISTRADOR, PROGRAMADOR o ENCARGADO.
+ *  - Nombre y apellido solo letras. Rol: ADMINISTRADOR, PROGRAMADOR, ENCARGADO o PRODUCCION.
  *  - eliUsu es baja logica (activo = false): el usuario puede tener historial en otras tablas.
  *  - actUsu reactiva a un usuario dado de baja (por si se dio de baja por error).
  *  - No se puede dar de baja a uno mismo, y el sistema nunca se queda sin un Administrador activo.
@@ -18,7 +18,7 @@ import java.util.List;
  */
 public class NUsuario {
 
-    private static final String[] ROLES = {"ADMINISTRADOR", "PROGRAMADOR", "ENCARGADO"};
+    private static final String[] ROLES = {"ADMINISTRADOR", "PROGRAMADOR", "ENCARGADO", "PRODUCCION"};
 
     private final DUsuario datos = new DUsuario();
     private final NAuditoria auditoria = new NAuditoria();

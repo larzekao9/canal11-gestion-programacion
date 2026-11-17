@@ -1,10 +1,11 @@
 package canal11.negocio;
 
-/** Actores del sistema aprobados en el CU1. */
+/** Actores del sistema aprobados en el CU1 (Producción se agregó tras el levantamiento de información). */
 public enum Rol {
     ADMINISTRADOR("Administrador"),
     PROGRAMADOR("Programador"),
-    ENCARGADO("Encargado de Contenidos");
+    ENCARGADO("Encargado de Contenidos"),
+    PRODUCCION("Producción");
 
     private final String nombre;
 

@@ -82,3 +82,9 @@ CREATE INDEX IF NOT EXISTS idx_spot_material      ON spot (id_material);
 
 -- 6) NO se aplica ON DELETE SET NULL a auditoria.id_usuario: los usuarios solo se dan de baja
 --    logica y SET NULL borraria en silencio quien hizo cada cambio. La FK queda como esta.
+
+-- 7) Rol PRODUCCION (el departamento que arma y transmite la senal). Para bases creadas antes
+--    de que 01_tablas.sql lo incluyera: se reemplaza el CHECK de usuario.rol.
+ALTER TABLE usuario DROP CONSTRAINT IF EXISTS usuario_rol_check;
+ALTER TABLE usuario ADD CONSTRAINT usuario_rol_check
+    CHECK (rol IN ('ADMINISTRADOR', 'PROGRAMADOR', 'ENCARGADO', 'PRODUCCION'));

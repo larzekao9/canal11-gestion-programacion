@@ -2,7 +2,7 @@
 # Formato de cada linea:   remitente | asunto
 # Ejecutar:  ejecutar.bat --lote pruebas\cu7.txt     (respuestas en salida\01.html, 02.html, ...)
 # Requiere: --instalar y haber corrido pruebas\cu1.txt, cu2.txt, cu4.txt y cu5.txt
-#           (usa SPOT-BSOL-01 APROBADO de 30 s, ana.rojas@gmail.com = ENCARGADO y pedro.vaca@hotmail.com = PROGRAMADOR).
+#           (usa SPOT-BSOL-01 APROBADO de 30 s, ana.rojas@gmail.com = ENCARGADO y pedro.vaca@hotmail.com = PROGRAMADOR y produccion.canal11@gmail.com = PRODUCCION).
 # OJO: crea pautas, parrillas, spots y emisiones en la base configurada (fechas de 2031).
 
 # --- ayuda ---
@@ -59,8 +59,8 @@ ana.rojas@gmail.com | insEmi["2031-05-10","13:00","13:00:00","13:10:00","EMITIDO
 pedro.vaca@hotmail.com | lisAud["*"]
 ana.rojas@gmail.com | lisAud["*"]
 
-# --- cierra el bloque pendiente: ahora el cumplimiento es 3 de 5 = 60 % ---
-larzekaobnc@gmail.com | insEmi["2031-05-10","13:00","13:00:00","13:10:00","EMITIDO"]
+# --- cierra el bloque pendiente (lo hace PRODUCCION, usuario creado en cu1): ahora el cumplimiento es 3 de 5 = 60 % ---
+produccion.canal11@gmail.com | insEmi["2031-05-10","13:00","13:00:00","13:10:00","EMITIDO"]
 larzekaobnc@gmail.com | conPar["2031-05-10"]
 
 # --- los spots de un bloque ya conciliado (EMITIDO / NO_EMITIDO) no se pueden quitar con eliSpo: ambos dan error ---

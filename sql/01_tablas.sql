@@ -8,7 +8,7 @@
 --                parrilla -> fecha       bloque -> fecha + hora_inicio   pauta -> nombre
 -- =====================================================================
 
--- CU1: usuarios del sistema (actores: Administrador, Programador, Encargado de Contenidos)
+-- CU1: usuarios del sistema (actores: Administrador, Programador, Encargado de Contenidos, Produccion)
 CREATE TABLE IF NOT EXISTS usuario (
     id_usuario      SERIAL PRIMARY KEY,
     ci              VARCHAR(20)  NOT NULL UNIQUE,
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     apellido        VARCHAR(80)  NOT NULL,
     email           VARCHAR(120) NOT NULL UNIQUE,
     telefono        VARCHAR(20),
-    rol             VARCHAR(20)  NOT NULL CHECK (rol IN ('ADMINISTRADOR', 'PROGRAMADOR', 'ENCARGADO')),
+    rol             VARCHAR(20)  NOT NULL CHECK (rol IN ('ADMINISTRADOR', 'PROGRAMADOR', 'ENCARGADO', 'PRODUCCION')),
     activo          BOOLEAN      NOT NULL DEFAULT TRUE,
     fecha_registro  TIMESTAMP    NOT NULL DEFAULT now()
 );

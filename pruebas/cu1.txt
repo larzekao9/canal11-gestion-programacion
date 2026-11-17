@@ -53,3 +53,16 @@ larzekaobnc@gmail.com | insUsu["8888888","José","Pérez","jose.perez@ficct.uagr
 larzekaobnc@gmail.com | insUsu["9999999","Pedro","Vaca","Pedro.Vaca@Hotmail.com","","PROGRAMADOR"]
 jose.perez@ficct.uagrm.edu.bo | help
 PEDRO.VACA@hotmail.com | help["2"]
+
+# --- rol PRODUCCION (saca la senal al aire: consulta todo y solo puede registrar emisiones) ---
+larzekaobnc@gmail.com | insUsu["5555555","Carla","Mendez","produccion.canal11@gmail.com","","PRODUCCION"]
+larzekaobnc@gmail.com | lisUsu["produccion"]
+produccion.canal11@gmail.com | help
+# Tienen permiso: el error que devuelven es de negocio ("no existe la parrilla"), NO de permisos
+produccion.canal11@gmail.com | mosPar["2031-01-01"]
+produccion.canal11@gmail.com | estPar["2031-01-01"]
+produccion.canal11@gmail.com | insEmi["2031-01-01","20:00","20:00:00","21:00:00","EMITIDO"]
+# No tienen permiso: deben responder "Su rol (Producción) no tiene permiso para usar ..."
+produccion.canal11@gmail.com | insPar["2031-01-01"]
+produccion.canal11@gmail.com | insMat["PROD-TEST","Prueba","SPOT","","30","MP4","/prod/test.mp4"]
+produccion.canal11@gmail.com | insUsu["4444444","Otro","Usuario","otro.usuario@gmail.com","","ENCARGADO"]

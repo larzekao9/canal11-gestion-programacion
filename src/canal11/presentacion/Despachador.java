@@ -33,6 +33,8 @@ public class Despachador {
     private static final Set<Rol> ADM = EnumSet.of(Rol.ADMINISTRADOR);
     private static final Set<Rol> ADM_PRO = EnumSet.of(Rol.ADMINISTRADOR, Rol.PROGRAMADOR);
     private static final Set<Rol> ADM_ENC = EnumSet.of(Rol.ADMINISTRADOR, Rol.ENCARGADO);
+    // Producción saca la señal al aire: además de consultar, registra la emisión real (insEmi)
+    private static final Set<Rol> ADM_PRO_PROD = EnumSet.of(Rol.ADMINISTRADOR, Rol.PROGRAMADOR, Rol.PRODUCCION);
 
     private final List<CasoUso> casosUso = new ArrayList<>();
     private final Map<String, Comando> comandos = new LinkedHashMap<>();
@@ -65,7 +67,7 @@ public class Despachador {
                 p("filtro"), "lisUsu[\"*\"]", ADM, usuario::listar);
         cmd(1, "mosUsu", "Muestra un usuario y los comandos para modificarlo o darlo de baja",
                 p("usuario (CI o email)"), "mosUsu[\"7654321\"]", ADM, usuario::mostrar);
-        cmd(1, "insUsu", "Registra un usuario. Rol: ADMINISTRADOR, PROGRAMADOR o ENCARGADO. Teléfono puede ir vacío \"\"",
+        cmd(1, "insUsu", "Registra un usuario. Rol: ADMINISTRADOR, PROGRAMADOR, ENCARGADO o PRODUCCION. Teléfono puede ir vacío \"\"",
                 p("ci", "nombre", "apellido", "email", "telefono", "rol"),
                 "insUsu[\"7654321\",\"Ana\",\"Rojas\",\"ana.rojas@gmail.com\",\"71234567\",\"PROGRAMADOR\"]", ADM, usuario::insertar);
         cmd(1, "modUsu", "Modifica un usuario: primero el usuario a modificar, luego todos sus datos nuevos",
@@ -146,7 +148,7 @@ public class Despachador {
                 "Registrar lo que realmente salió al aire, compararlo con lo programado y consultar el historial de cambios.");
         cmd(7, "insEmi", "Registra la emisión real del bloque que empieza a hora_inicio. Estado: EMITIDO, PARCIAL o NO_EMITIDO",
                 p("fecha", "hora_inicio", "inicio_real", "fin_real", "estado"),
-                "insEmi[\"2026-11-20\",\"20:00\",\"20:00:05\",\"21:00:00\",\"EMITIDO\"]", ADM_PRO, emision::insertar);
+                "insEmi[\"2026-11-20\",\"20:00\",\"20:00:05\",\"21:00:00\",\"EMITIDO\"]", ADM_PRO_PROD, emision::insertar);
         cmd(7, "conPar", "Conciliación de un día: lo programado vs. lo emitido", p("fecha"), "conPar[\"2026-11-20\"]", TODOS, emision::conciliar);
         cmd(7, "lisAud", "Historial de cambios. Filtro: \"*\" = todo, una entidad (usuario, parrilla...) o una fecha",
                 p("filtro"), "lisAud[\"*\"]", ADM, auditoria::listar);
