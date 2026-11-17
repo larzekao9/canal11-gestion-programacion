@@ -1,5 +1,8 @@
 package canal11.datos;
 
+import org.postgresql.util.PSQLException;
+import org.postgresql.util.ServerErrorMessage;
+
 import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,6 +22,9 @@ public final class ErrorBD {
         String msg = e.getMessage() == null ? "" : e.getMessage();
         switch (estado) {
             case "23505": // unique_violation
+                if (msg.contains("ux_usuario_email_lower")) {
+                    return "Ya existe un usuario con ese correo (sin importar mayúsculas o minúsculas).";
+                }
                 Matcher u = Pattern.compile("\\(([^)]+)\\)=\\(([^)]+)\\)").matcher(msg);
                 return u.find() ? "Ya existe un registro con " + u.group(1) + " = '" + u.group(2) + "'."
                         : "Ya existe un registro con esos datos.";
@@ -30,7 +36,15 @@ public final class ErrorBD {
                 Matcher n = Pattern.compile("column \"([^\"]+)\"").matcher(msg);
                 return n.find() ? "El campo '" + n.group(1) + "' no puede estar vacío." : "Falta un campo obligatorio.";
             case "23514": // check_violation
+                if (msg.contains("ck_bloque_tipo")) {
+                    return "Un bloque PROGRAMA debe tener programa; una PAUSA_COMERCIAL no puede tener programa ni material.";
+                }
                 return "Uno de los valores no está permitido. Revise los valores válidos con help.";
+            case "23P01": // exclusion_violation (ex_bloque_sin_solape)
+                return "El horario se solapa con otro bloque de la parrilla.";
+            case "P0001": // RAISE EXCEPTION de fn_validar_spot: el mensaje ya viene en espanol
+                ServerErrorMessage srv = e instanceof PSQLException ? ((PSQLException) e).getServerErrorMessage() : null;
+                return srv != null && srv.getMessage() != null ? srv.getMessage() : msg;
             case "22001":
                 return "Uno de los textos es demasiado largo.";
             case "22P02": case "22007": case "22008":
