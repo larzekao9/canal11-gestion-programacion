@@ -16,7 +16,7 @@ src/canal11/
   presentacion/     Interprete (asunto), Despachador (catalogo y permisos), Ayuda (help), Html (plantilla)
   negocio/          N* (reglas de negocio y validaciones), Rol, Usuario
   datos/            D* (SQL con PreparedStatement), Conexion, Instalador
-sql/                01_tablas.sql, 02_datos.sql   (esquema canal11)
+sql/                01_tablas.sql, 02_datos.sql, 03_mejoras.sql   (esquema canal11)
 ```
 
 ## Flujo del analizador de correos
@@ -48,106 +48,32 @@ Capas: `comunicacion` (POP3/SMTP con sockets) → `presentacion` (intérprete, d
 
 ## Base de datos (esquema `canal11` en PostgreSQL)
 
-```mermaid
-erDiagram
-    USUARIO ||--o{ MATERIAL : "registra / valida"
-    USUARIO ||--o{ PARRILLA : crea
-    USUARIO ||--o{ EMISION : registra
-    USUARIO ||--o{ AUDITORIA : realiza
-    PROGRAMA |o--o{ MATERIAL : "tiene"
-    PROGRAMA |o--o{ BLOQUE : "se emite en"
-    PARRILLA ||--o{ BLOQUE : contiene
-    MATERIAL |o--o{ BLOQUE : "se emite en"
-    BLOQUE ||--o| EMISION : "se concilia con"
-    BLOQUE ||--o{ SPOT : "aloja (pausa comercial)"
-    PAUTA ||--o{ SPOT : "agrupa"
-    MATERIAL ||--o{ SPOT : "es el aviso"
+![Diagrama de clases UML 2.5 del esquema canal11](docs/Canal11_Diagrama_UML_2.5.png)
 
-    USUARIO {
-        int id_usuario PK
-        string ci UK
-        string email UK
-        string rol
-        bool activo
-    }
-    PROGRAMA {
-        int id_programa PK
-        string nombre UK
-        string tipo
-        int duracion_min
-        bool activo
-    }
-    MATERIAL {
-        int id_material PK
-        string codigo UK
-        string tipo
-        int duracion_seg
-        string ruta UK
-        string estado
-        int registrado_por FK
-        int validado_por FK
-    }
-    PARRILLA {
-        int id_parrilla PK
-        date fecha UK
-        string estado
-        int creado_por FK
-    }
-    BLOQUE {
-        int id_bloque PK
-        int id_parrilla FK
-        int id_programa FK
-        int id_material FK
-        time hora_inicio
-        time hora_fin
-        string tipo
-    }
-    PAUTA {
-        int id_pauta PK
-        string nombre UK
-        string anunciante
-        date fecha_inicio
-        date fecha_fin
-        int max_pases
-    }
-    SPOT {
-        int id_spot PK
-        int id_pauta FK
-        int id_material FK
-        int id_bloque FK
-        time hora
-        string estado
-    }
-    EMISION {
-        int id_emision PK
-        int id_bloque FK
-        timestamp inicio_real
-        timestamp fin_real
-        string estado
-    }
-    AUDITORIA {
-        int id_auditoria PK
-        int id_usuario FK
-        string accion
-        string entidad
-        string comando
-        timestamp fecha
-    }
-```
+**Leyenda de enumeraciones** (la imagen es anterior al rol nuevo y a las mejoras de BD):
+
+- `RolUsuario` = ADMINISTRADOR | PROGRAMADOR | ENCARGADO | **PRODUCCION**
+- `TipoPrograma` = NOTICIERO | REVISTA | PELICULA | DOCUMENTAL | SERIE | OTRO · `TipoMaterial` = PROGRAMA | SPOT | PROMO
+- `EstadoMaterial` = PENDIENTE | APROBADO | RECHAZADO · `EstadoParrilla` = BORRADOR | PUBLICADA
+- `TipoBloque` = PROGRAMA | PAUSA_COMERCIAL · `EstadoSpot` = PROGRAMADO | EMITIDO | NO_EMITIDO · `EstadoEmision` = EMITIDO | PARCIAL | NO_EMITIDO
+
+Las restricciones que la imagen marca como *(propuesto)* **ya están aplicadas en la BD** por [`sql/03_mejoras.sql`](sql/03_mejoras.sql): sin solapamiento por parrilla, `PROGRAMA ⇒ id_programa ≠ null`, `PAUSA_COMERCIAL ⇒ id_programa = null` y que el spot esté dentro del horario de su pausa.
 
 | Tabla | Para qué sirve | Claves y restricciones principales |
 |---|---|---|
-| `usuario` | Personas que usan el sistema; el rol (ADMINISTRADOR, PROGRAMADOR, ENCARGADO) define sus permisos | `ci` y `email` únicos; baja lógica (`activo`) |
+| `usuario` | Personas que usan el sistema; el rol (ADMINISTRADOR, PROGRAMADOR, ENCARGADO, PRODUCCION) define sus permisos | `ci` y `email` únicos (el email también sin distinguir mayúsculas: `ux_usuario_email_lower`); baja lógica (`activo`) |
 | `programa` | Catálogo de programas (noticiero, película, serie...) | `nombre` único; duración > 0 |
 | `material` | Video que se emite: programa, spot o promo; pasa por PENDIENTE → APROBADO/RECHAZADO | `codigo` y `ruta` únicos; duración > 0 |
 | `parrilla` | Programación de un día (BORRADOR o PUBLICADA) | una por `fecha` |
-| `bloque` | Franja horaria de la parrilla: programa o pausa comercial | `hora_fin > hora_inicio`; sin solapamientos (regla de negocio) |
+| `bloque` | Franja horaria de la parrilla: programa o pausa comercial | `hora_fin > hora_inicio`; `ck_bloque_tipo`; sin solapamientos (`ex_bloque_sin_solape`, también validado en `NParrilla`) |
 | `pauta` | Contrato publicitario de un anunciante con vigencia y máximo de pases | `nombre` único; `fecha_fin >= fecha_inicio` |
-| `spot` | Aviso ubicado en una pausa comercial | un spot por (`bloque`, `hora`) |
+| `spot` | Aviso ubicado en una pausa comercial | un spot por (`bloque`, `hora`); trigger `fn_validar_spot`: bloque PAUSA_COMERCIAL, hora dentro de la pausa, material SPOT aprobado |
 | `emision` | Lo realmente emitido de cada bloque (EMITIDO, PARCIAL, NO_EMITIDO) | una por bloque |
-| `auditoria` | Historial de cada cambio: quién, qué, cuándo y con qué comando | índice por (`entidad`, `id_entidad`) |
+| `auditoria` | Historial de cada cambio: quién, qué, cuándo y con qué comando | índice por (`entidad`, `id_entidad`); la FK a `usuario` **no** lleva `ON DELETE SET NULL`: los usuarios solo se dan de baja lógica y SET NULL borraría en silencio quién hizo cada cambio |
 
-Script completo en [`sql/01_tablas.sql`](sql/01_tablas.sql); `--instalar` lo ejecuta y crea además el administrador inicial.
+Scripts: [`sql/01_tablas.sql`](sql/01_tablas.sql) (tablas), `02_datos.sql` (administrador inicial) y [`sql/03_mejoras.sql`](sql/03_mejoras.sql) (restricciones, trigger, índices y rol PRODUCCION). `--instalar` los ejecuta en orden y es repetible; antes de `03` revisa que los datos existentes no violen las restricciones. Si el servidor no deja crear la extensión `btree_gist`, avisa y sigue (el solape queda validado solo en `NParrilla`).
+
+**Roles y áreas del canal:** Prensa → `ENCARGADO` · Programación → `PROGRAMADOR` · Producción → `PRODUCCION` (consulta todo y registra la emisión real con `insEmi`) · dirección/sistemas → `ADMINISTRADOR`.
 
 ## Seguridad y registro
 
@@ -230,6 +156,7 @@ material por código, parrilla por fecha, bloque por fecha + hora, pauta por nom
 | 6 | CU7 Emisión y conciliación | ✅ |
 | 7 | CU8 Reportes | ✅ |
 | 8 | Logs `access.log` / `error.log` | ✅ |
+| 9 | Endurecer la BD (`03_mejoras.sql`) + rol `PRODUCCION` | ✅ Probado con `pruebas/bd_restricciones.sql` |
 
 Las baterías `pruebas/cu1.txt` a `cu8.txt` se corrieron completas contra una base PostgreSQL local con los resultados esperados.
 Pendiente: la prueba de extremo a extremo con el correo real del servidor del curso (POP3/SMTP).

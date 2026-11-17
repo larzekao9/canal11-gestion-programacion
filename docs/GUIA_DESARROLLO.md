@@ -18,6 +18,8 @@ Esta guía es para quien continúe el proyecto. Explica **qué ya está hecho**,
 | 5 | CU6 Pauta y spots (`DPauta/DSpot`, `NPauta/NSpot`, `PPauta`) | ✅ Compila. **Pendiente:** correr `pruebas/cu6.txt` contra la BD |
 | 6 | CU7 Emisión real, conciliación y `lisAud` (`DEmision`, `NEmision`, `PEmision`, `PAuditoria`; `DAuditoria.listar`) | ✅ Compila. **Pendiente:** correr `pruebas/cu7.txt` contra la BD |
 | 7 | CU8 Reportes (`DReporte`, `NReporte`, `PReporte`) | ✅ Compila. **Pendiente:** correr `pruebas/cu8.txt` contra la BD |
+| 8 | Logs `access.log` / `error.log` | ✅ |
+| 9 | **Endurecer la BD** (`sql/03_mejoras.sql`: CHECK de bloque, exclusión de solapes, trigger de spots, email único sin mayúsculas, índices FK) y **rol `PRODUCCION`** | ✅ Probado en PostgreSQL 16 local: `--instalar` dos veces, lotes `cu1`–`cu8` y `pruebas/bd_restricciones.sql` |
 
 **Los 39 comandos de los 8 casos de uso ya están implementados** (ninguno dice "en desarrollo"). Lo que falta es **probar todo contra la BD y el servidor de correo del curso**: correr, en este orden, `pruebas/cu1.txt`, `cu2`, `cu4`, `cu5`, `cu3`, `cu6`, `cu7` y `cu8`, y revisar los HTML de `salida/`.
 
@@ -30,7 +32,7 @@ Requisitos: Java 17 o superior (`java -version`). No usa Maven ni frameworks; el
 ```bat
 copy config.properties.example config.properties   (y completar las contraseñas)
 compilar.bat
-ejecutar.bat --instalar                             (crea el esquema canal11 y sus tablas; se puede repetir)
+ejecutar.bat --instalar                             (crea el esquema canal11, tablas y mejoras; se puede repetir)
 ejecutar.bat                                        (revisa el buzón cada 10 s y responde)
 ```
 
@@ -42,6 +44,13 @@ ejecutar.bat                                        (revisa el buzón cada 10 s 
 | `ejecutar.bat --lote pruebas\cu1.txt` | Ejecuta todas las líneas `remitente \| asunto` del archivo. Respuestas en `salida\01.html`, `02.html`... y un resumen OK/ERROR en consola |
 | `ejecutar.bat --buzon` | Lista los correos del buzón **sin borrarlos** y dice cuáles se responderían |
 | `ejecutar.bat --enviar-prueba correo@x.com` | Envía la ayuda a ese correo (prueba del SMTP) |
+
+### Mejoras de BD y rol PRODUCCION (fase 9)
+- `Instalador.leerSentencias` respeta los bloques `$$ ... $$` (funciones plpgsql y `DO`). Antes de `03_mejoras.sql` revisa los datos existentes y, si hay bloques solapados, bloques con tipo inconsistente o emails repetidos con otra capitalización, lo informa y se detiene.
+- `ErrorBD` traduce `23P01` (solape), `P0001` (mensajes del trigger de spots), `ck_bloque_tipo` y el índice de email.
+- Producción (`PRODUCCION`) recibe los comandos de consulta (`TODOS`) y además `insEmi`. Mapeo: Prensa → `ENCARGADO`, Programación → `PROGRAMADOR`, Producción → `PRODUCCION`, dirección/sistemas → `ADMINISTRADOR`.
+- El trigger se dispara solo al cambiar `id_bloque`, `id_material` o `hora`: `DEmision.actualizarSpots` (`UPDATE spot SET estado`) no revalida el material.
+- Probar la BD: `psql -d BASE -f pruebas/bd_restricciones.sql` (cada prueba imprime OK/FALLO y todo se deshace con ROLLBACK).
 
 ### Problemas conocidos del servidor del curso
 - **El SMTP solo reenvía a Gmail desde la red de la facultad.** Desde otra red el error es `550 Relaying denied`. El sistema igual lee y procesa; solo falla la respuesta.
@@ -147,7 +156,9 @@ canal11-programacion/
 │       └── Instalador.java       ejecuta los .sql
 ├── sql/01_tablas.sql             las 9 tablas (ya están todas, no hace falta crear más)
 ├── sql/02_datos.sql              datos iniciales (admin)
+├── sql/03_mejoras.sql            restricciones, trigger fn_validar_spot, índices y rol PRODUCCION (repetible)
 ├── pruebas/cu1.txt               batería de pruebas del CU1 (modelo para las demás)
+├── pruebas/bd_restricciones.sql  demuestra que la BD rechaza datos inválidos (psql -f; no deja datos)
 ├── docs/GUIA_DESARROLLO.md       esta guía
 ├── compilar.bat / ejecutar.bat
 └── config.properties(.example)
