@@ -38,7 +38,12 @@ public final class Instalador {
             st.execute("SET search_path TO " + esquema + ", public");
             for (String script : SCRIPTS) {
                 if (script.endsWith("03_mejoras.sql")) {
-                    verificarDatos(st);
+                    try {
+                        verificarDatos(st);
+                    } catch (IllegalStateException e) { // datos que violan las restricciones: mensaje claro, sin traza
+                        System.err.println(e.getMessage());
+                        System.exit(1);
+                    }
                 }
                 int n = 0;
                 for (String sentencia : leerSentencias(Path.of(script))) {
