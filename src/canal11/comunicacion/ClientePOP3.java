@@ -103,10 +103,23 @@ public class ClientePOP3 implements AutoCloseable {
 
     private String leerOk() throws IOException {
         String r = entrada.readLine();
-        if (r == null || !r.startsWith("+OK")) {
+        if (r == null) {
+            throw new IOException("POP3: conexion cerrada por el servidor");
+        }
+        if (r.startsWith("-ERR")) {
+            throw new ErrorPOP3("POP3: " + r);
+        }
+        if (!r.startsWith("+OK")) {
             throw new IOException("POP3: " + r);
         }
         return r;
+    }
+
+    /** Respuesta "-ERR" del servidor (la conexion sigue viva), p. ej. un mensaje que otro cliente ya borro. */
+    public static class ErrorPOP3 extends IOException {
+        public ErrorPOP3(String mensaje) {
+            super(mensaje);
+        }
     }
 
     /** Lee una respuesta multilinea hasta la linea "." (quita el punto de relleno). */

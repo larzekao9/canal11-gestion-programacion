@@ -69,8 +69,13 @@ public class HiloCorreo implements Runnable {
             pop.login(usuario, password);
             int total = pop.cantidadMensajes();
             for (int i = 1; i <= total; i++) {
-                correos.add(pop.obtener(i));
-                pop.eliminar(i);
+                try {
+                    correos.add(pop.obtener(i));
+                    pop.eliminar(i);
+                } catch (ClientePOP3.ErrorPOP3 e) {
+                    // Buzon compartido: otro cliente ya borro este mensaje ("expunged"). Se omite y se sigue.
+                    System.err.println("[HiloCorreo] Mensaje " + i + " omitido: " + e.getMessage());
+                }
             }
         }
         return correos;
