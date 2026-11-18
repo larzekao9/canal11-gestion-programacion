@@ -73,7 +73,7 @@ Las restricciones que la imagen marca como *(propuesto)* **ya están aplicadas e
 
 Scripts: [`sql/01_tablas.sql`](sql/01_tablas.sql) (tablas), `02_datos.sql` (administrador inicial) y [`sql/03_mejoras.sql`](sql/03_mejoras.sql) (restricciones, triggers, índices, `material.descripcion` y rol PRODUCCION). `--instalar` los ejecuta en orden y es repetible; antes de `03` revisa que los datos existentes no violen las restricciones (solapes, tipo de bloque, correos repetidos, materiales rechazados sin observación o validados sin responsable, emisiones con fin anterior al inicio). Si el servidor no deja crear la extensión `btree_gist`, avisa y sigue (el solape queda validado solo en `NParrilla`).
 
-**Roles y áreas del canal:** Prensa → `ENCARGADO` · Programación → `PROGRAMADOR` · Producción → `PRODUCCION` (consulta todo y registra la emisión real con `insEmi`) · dirección/sistemas → `ADMINISTRADOR`.
+**Roles y áreas del canal:** Prensa → `ENCARGADO` · Programación → `PROGRAMADOR` (arma la parrilla, pautas y spots, y registra sus propios materiales con `insMat`/`modMat`/`eliMat`; no los aprueba) · Producción → `PRODUCCION` (consulta todo y registra la emisión real con `insEmi`) · dirección/sistemas → `ADMINISTRADOR`.
 
 ## Seguridad y registro
 

@@ -48,6 +48,7 @@ ejecutar.bat                                        (revisa el buzón cada 10 s 
 ### Mejoras de BD y rol PRODUCCION (fase 9)
 - `Instalador.leerSentencias` respeta los bloques `$$ ... $$` (funciones plpgsql y `DO`). Antes de `03_mejoras.sql` revisa los datos existentes y, si hay bloques solapados, bloques con tipo inconsistente o emails repetidos con otra capitalización, lo informa y se detiene.
 - `ErrorBD` traduce `23P01` (solape), `P0001` (mensajes del trigger de spots), `ck_bloque_tipo` y el índice de email.
+- Programación (`PROGRAMADOR`) además registra, modifica y da de baja sus propios materiales (`ADM_ENC_PRO`); `valMat` sigue siendo de `ENCARGADO`.
 - Producción (`PRODUCCION`) recibe los comandos de consulta (`TODOS`) y además `insEmi`. Mapeo: Prensa → `ENCARGADO`, Programación → `PROGRAMADOR`, Producción → `PRODUCCION`, dirección/sistemas → `ADMINISTRADOR`.
 - El trigger se dispara solo al cambiar `id_bloque`, `id_material` o `hora`: `DEmision.actualizarSpots` (`UPDATE spot SET estado`) no revalida el material.
 - Probar la BD: `psql -d BASE -f pruebas/bd_restricciones.sql` (cada prueba imprime OK/FALLO y todo se deshace con ROLLBACK).

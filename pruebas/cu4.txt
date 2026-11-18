@@ -32,10 +32,10 @@ larzekaobnc@gmail.com | mosMat["NO-EXISTE"]
 larzekaobnc@gmail.com | modMat["NO-EXISTE","t","SPOT","","30","MP4","/z.mp4"]
 larzekaobnc@gmail.com | modMat["SPOT-BSOL-01","Spot","SPOT","","30","MOV","/prensa/not_2011.mp4"]
 
-# --- permisos (PROGRAMADOR no gestiona materiales) ---
+# --- permisos (PROGRAMADOR registra sus propios materiales; la aprobacion es de ENCARGADO) ---
 # Cree antes un PROGRAMADOR, ej: insUsu["5555555","Pedro","Vaca","pedro.vaca@hotmail.com","","PROGRAMADOR"]
 pedro.vaca@hotmail.com | lisMat["*"]
-pedro.vaca@hotmail.com | insMat["NOT-9","x","SPOT","","30","MP4","/p.mp4"]
+pedro.vaca@hotmail.com | insMat["NOT-9","x","SPOT","","30","MP4","/p.mp4"]   # ahora SI se acepta (queda PENDIENTE)
 
 # --- baja ---
 larzekaobnc@gmail.com | eliMat["PROMO-01"]

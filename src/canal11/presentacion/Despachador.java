@@ -33,6 +33,9 @@ public class Despachador {
     private static final Set<Rol> ADM = EnumSet.of(Rol.ADMINISTRADOR);
     private static final Set<Rol> ADM_PRO = EnumSet.of(Rol.ADMINISTRADOR, Rol.PROGRAMADOR);
     private static final Set<Rol> ADM_ENC = EnumSet.of(Rol.ADMINISTRADOR, Rol.ENCARGADO);
+    // Programación también registra sus propios materiales (películas, documentales, spots) sin pasar por Prensa;
+    // la aprobación (valMat) sigue siendo de ENCARGADO: quien registra no se aprueba a sí mismo.
+    private static final Set<Rol> ADM_ENC_PRO = EnumSet.of(Rol.ADMINISTRADOR, Rol.ENCARGADO, Rol.PROGRAMADOR);
     // Producción saca la señal al aire: además de consultar, registra la emisión real (insEmi)
     private static final Set<Rol> ADM_PRO_PROD = EnumSet.of(Rol.ADMINISTRADOR, Rol.PROGRAMADOR, Rol.PRODUCCION);
 
@@ -114,12 +117,12 @@ public class Despachador {
         cmd(4, "insMat", "Registra un material. Tipo: PROGRAMA, SPOT o PROMO. Programa puede ir vacío \"\" (spots)",
                 p("codigo", "titulo", "tipo", "programa (nombre)", "duracion_seg", "formato", "ruta"),
                 "insMat[\"NOT-2011\",\"Noticiero 20 de noviembre\",\"PROGRAMA\",\"Noticiero Central\",\"3600\",\"MP4\",\"/prensa/not_2011.mp4\"]",
-                ADM_ENC, material::insertar);
+                ADM_ENC_PRO, material::insertar);
         cmd(4, "modMat", "Modifica un material: primero el código, luego todos sus datos nuevos",
                 p("material (código)", "titulo", "tipo", "programa (nombre)", "duracion_seg", "formato", "ruta"),
                 "modMat[\"NOT-2011\",\"Noticiero 20 de noviembre\",\"PROGRAMA\",\"Noticiero Central\",\"3580\",\"MP4\",\"/prensa/not_2011.mp4\"]",
-                ADM_ENC, material::modificar);
-        cmd(4, "eliMat", "Da de baja un material", p("material (código)"), "eliMat[\"NOT-2011\"]", ADM_ENC, material::eliminar);
+                ADM_ENC_PRO, material::modificar);
+        cmd(4, "eliMat", "Da de baja un material", p("material (código)"), "eliMat[\"NOT-2011\"]", ADM_ENC_PRO, material::eliminar);
 
         // ------------------------------------------------------------------ CU5
         cu(5, "Gestión de Validar Estado de Emisión", "Aprobar o rechazar materiales y ver si cada bloque está listo para salir al aire.");

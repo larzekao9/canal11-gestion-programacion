@@ -16,7 +16,7 @@ larzekaobnc@gmail.com | valMat["","APROBADO",""]
 larzekaobnc@gmail.com | valMat["NO-EXISTE","APROBADO",""]
 larzekaobnc@gmail.com | valMat["PROMO-01","APROBADO","Esta de baja"]
 
-# --- permisos (PROGRAMADOR no valida; ENCARGADO si) ---
+# --- permisos (PROGRAMADOR no valida, aunque si registra materiales; ENCARGADO valida) ---
 pedro.vaca@hotmail.com | valMat["NOT-2011","APROBADO","Intento"]
 pedro.vaca@hotmail.com | estPar["2031-03-10"]   # estPar es de todos los roles: falla solo porque la parrilla aun no existe
 

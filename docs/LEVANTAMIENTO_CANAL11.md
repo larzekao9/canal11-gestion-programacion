@@ -346,7 +346,7 @@ Qué información maneja cada área, de dónde viene y a dónde va. Es la base p
 | Área del canal | Rol en el sistema | Qué hace en el sistema |
 |---|---|---|
 | Dirección / sistemas | `ADMINISTRADOR` | Gestiona usuarios, consulta la auditoría, accede a todo |
-| Programación | `PROGRAMADOR` | Arma y publica la parrilla, programas, pautas, spots, registra emisión |
+| Programación | `PROGRAMADOR` | Arma y publica la parrilla, programas, pautas, spots y registra sus propios materiales (películas, documentales, spots); la aprobación sigue siendo de `ENCARGADO` |
 | Prensa | `ENCARGADO` | Registra materiales de video y los valida (aprobar/rechazar) |
 | Producción | `PRODUCCION` | Consulta todo y registra la emisión real (`insEmi`) |
 
