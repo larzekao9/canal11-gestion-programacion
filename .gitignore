@@ -7,3 +7,4 @@ salida/
 *.iml
 .DS_Store
 logs/
+salida_srv/
