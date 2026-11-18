@@ -57,21 +57,21 @@ Capas: `comunicacion` (POP3/SMTP con sockets) → `presentacion` (intérprete, d
 - `EstadoMaterial` = PENDIENTE | APROBADO | RECHAZADO · `EstadoParrilla` = BORRADOR | PUBLICADA
 - `TipoBloque` = PROGRAMA | PAUSA_COMERCIAL · `EstadoSpot` = PROGRAMADO | EMITIDO | NO_EMITIDO · `EstadoEmision` = EMITIDO | PARCIAL | NO_EMITIDO
 
-Las restricciones que la imagen marca como *(propuesto)* **ya están aplicadas en la BD** por [`sql/03_mejoras.sql`](sql/03_mejoras.sql): sin solapamiento por parrilla, `PROGRAMA ⇒ id_programa ≠ null`, `PAUSA_COMERCIAL ⇒ id_programa = null` y que el spot esté dentro del horario de su pausa.
+Las restricciones que la imagen marca como *(propuesto)* **ya están aplicadas en la BD** por [`sql/03_mejoras.sql`](sql/03_mejoras.sql): sin solapamiento por parrilla, `PROGRAMA ⇒ id_programa ≠ null`, `PAUSA_COMERCIAL ⇒ id_programa = null` y que el spot esté dentro del horario de su pausa. Además se reforzaron en la BD reglas que antes solo validaba el Java: rechazar un material exige observación, publicar una parrilla exige bloques con material aprobado, un spot respeta la vigencia y el máximo de pases de su pauta, y la auditoría es de solo inserción.
 
 | Tabla | Para qué sirve | Claves y restricciones principales |
 |---|---|---|
 | `usuario` | Personas que usan el sistema; el rol (ADMINISTRADOR, PROGRAMADOR, ENCARGADO, PRODUCCION) define sus permisos | `ci` y `email` únicos (el email también sin distinguir mayúsculas: `ux_usuario_email_lower`); baja lógica (`activo`) |
 | `programa` | Catálogo de programas (noticiero, película, serie...) | `nombre` único; duración > 0 |
-| `material` | Video que se emite: programa, spot o promo; pasa por PENDIENTE → APROBADO/RECHAZADO | `codigo` y `ruta` únicos; duración > 0 |
-| `parrilla` | Programación de un día (BORRADOR o PUBLICADA) | una por `fecha` |
+| `material` | Video que se emite: programa, spot o promo; pasa por PENDIENTE → APROBADO/RECHAZADO | `codigo` y `ruta` únicos; duración > 0; `descripcion` opcional (texto de la nota); `ck_material_rechazo` (RECHAZADO exige observación) y `ck_material_validado` (si no es PENDIENTE exige `validado_por`) |
+| `parrilla` | Programación de un día (BORRADOR o PUBLICADA) | una por `fecha`; trigger `fn_validar_publicacion`: al pasar a PUBLICADA debe tener bloques y cada bloque PROGRAMA un material activo y APROBADO |
 | `bloque` | Franja horaria de la parrilla: programa o pausa comercial | `hora_fin > hora_inicio`; `ck_bloque_tipo`; sin solapamientos (`ex_bloque_sin_solape`, también validado en `NParrilla`) |
 | `pauta` | Contrato publicitario de un anunciante con vigencia y máximo de pases | `nombre` único; `fecha_fin >= fecha_inicio` |
-| `spot` | Aviso ubicado en una pausa comercial | un spot por (`bloque`, `hora`); trigger `fn_validar_spot`: bloque PAUSA_COMERCIAL, hora dentro de la pausa, material SPOT aprobado |
-| `emision` | Lo realmente emitido de cada bloque (EMITIDO, PARCIAL, NO_EMITIDO) | una por bloque |
-| `auditoria` | Historial de cada cambio: quién, qué, cuándo y con qué comando | índice por (`entidad`, `id_entidad`); la FK a `usuario` **no** lleva `ON DELETE SET NULL`: los usuarios solo se dan de baja lógica y SET NULL borraría en silencio quién hizo cada cambio |
+| `spot` | Aviso ubicado en una pausa comercial | un spot por (`bloque`, `hora`); trigger `fn_validar_spot`: bloque PAUSA_COMERCIAL, hora dentro de la pausa, material SPOT aprobado; trigger `fn_validar_spot_pauta`: la fecha dentro de la vigencia de la pauta y sin superar `max_pases` (los NO_EMITIDO no cuentan) |
+| `emision` | Lo realmente emitido de cada bloque (EMITIDO, PARCIAL, NO_EMITIDO) | una por bloque; `ck_emision_fin` (`fin_real` posterior a `inicio_real`) |
+| `auditoria` | Historial de cada cambio: quién, qué, cuándo y con qué comando | solo inserción: el trigger `fn_auditoria_inmutable` rechaza UPDATE, DELETE y TRUNCATE (no frena a quien administre la BD; para eso hay que quitar esos permisos al rol de la aplicación); índice por (`entidad`, `id_entidad`); la FK a `usuario` **no** lleva `ON DELETE SET NULL`: los usuarios solo se dan de baja lógica y SET NULL borraría en silencio quién hizo cada cambio |
 
-Scripts: [`sql/01_tablas.sql`](sql/01_tablas.sql) (tablas), `02_datos.sql` (administrador inicial) y [`sql/03_mejoras.sql`](sql/03_mejoras.sql) (restricciones, trigger, índices y rol PRODUCCION). `--instalar` los ejecuta en orden y es repetible; antes de `03` revisa que los datos existentes no violen las restricciones. Si el servidor no deja crear la extensión `btree_gist`, avisa y sigue (el solape queda validado solo en `NParrilla`).
+Scripts: [`sql/01_tablas.sql`](sql/01_tablas.sql) (tablas), `02_datos.sql` (administrador inicial) y [`sql/03_mejoras.sql`](sql/03_mejoras.sql) (restricciones, triggers, índices, `material.descripcion` y rol PRODUCCION). `--instalar` los ejecuta en orden y es repetible; antes de `03` revisa que los datos existentes no violen las restricciones (solapes, tipo de bloque, correos repetidos, materiales rechazados sin observación o validados sin responsable, emisiones con fin anterior al inicio). Si el servidor no deja crear la extensión `btree_gist`, avisa y sigue (el solape queda validado solo en `NParrilla`).
 
 **Roles y áreas del canal:** Prensa → `ENCARGADO` · Programación → `PROGRAMADOR` · Producción → `PRODUCCION` (consulta todo y registra la emisión real con `insEmi`) · dirección/sistemas → `ADMINISTRADOR`.
 
@@ -156,7 +156,8 @@ material por código, parrilla por fecha, bloque por fecha + hora, pauta por nom
 | 6 | CU7 Emisión y conciliación | ✅ |
 | 7 | CU8 Reportes | ✅ |
 | 8 | Logs `access.log` / `error.log` | ✅ |
-| 9 | Endurecer la BD (`03_mejoras.sql`) + rol `PRODUCCION` | ✅ Probado con `pruebas/bd_restricciones.sql` |
+| 9 | Endurecer la BD (`03_mejoras.sql`) + rol `PRODUCCION` | ✅ Probado con `pruebas/bd_restricciones.sql` (23 comprobaciones) |
+| 10 | Reglas de negocio también en la BD (material, publicación, pauta, emisión) + auditoría inmutable + `material.descripcion` | ✅ Probado con `pruebas/bd_restricciones.sql` |
 
 Las baterías `pruebas/cu1.txt` a `cu8.txt` se corrieron completas contra una base PostgreSQL local con los resultados esperados.
 Pendiente: la prueba de extremo a extremo con el correo real del servidor del curso (POP3/SMTP).

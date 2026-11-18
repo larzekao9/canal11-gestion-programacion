@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS material (
     codigo            VARCHAR(20)  NOT NULL UNIQUE,   -- ej. NOT-2011, SPOT-BSOL-01
     id_programa       INTEGER      REFERENCES programa (id_programa),
     titulo            VARCHAR(160) NOT NULL,
+    descripcion       VARCHAR(500),
     tipo              VARCHAR(20)  NOT NULL CHECK (tipo IN ('PROGRAMA', 'SPOT', 'PROMO')),
     duracion_seg      INTEGER      NOT NULL CHECK (duracion_seg > 0),
     formato           VARCHAR(10)  NOT NULL,

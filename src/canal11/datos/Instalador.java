@@ -85,6 +85,12 @@ public final class Instalador {
              + "OR (b.tipo = 'PAUSA_COMERCIAL' AND b.id_programa IS NULL AND b.id_material IS NULL))"},
             {"Usuarios con el mismo correo escrito con distintas mayusculas",
              "SELECT lower(email) FROM usuario GROUP BY lower(email) HAVING count(*) > 1"},
+            {"Materiales RECHAZADOS sin observacion, o validados (no PENDIENTE) sin responsable",
+             "SELECT codigo || ' (' || estado || ')' FROM material "
+             + "WHERE (estado = 'RECHAZADO' AND (observacion IS NULL OR btrim(observacion) = '')) "
+             + "OR (estado <> 'PENDIENTE' AND validado_por IS NULL)"},
+            {"Emisiones cuyo fin_real no es posterior a inicio_real",
+             "SELECT 'emision ' || id_emision FROM emision WHERE fin_real IS NOT NULL AND fin_real <= inicio_real"},
         };
         List<String> problemas = new ArrayList<>();
         for (String[] regla : bloqueantes) {

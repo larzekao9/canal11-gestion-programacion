@@ -83,6 +83,102 @@ CREATE INDEX IF NOT EXISTS idx_spot_material      ON spot (id_material);
 -- 6) NO se aplica ON DELETE SET NULL a auditoria.id_usuario: los usuarios solo se dan de baja
 --    logica y SET NULL borraria en silencio quien hizo cada cambio. La FK queda como esta.
 
+-- 8) Descripcion de la nota/material (el levantamiento dice que Prensa entrega un texto de descripcion).
+ALTER TABLE material ADD COLUMN IF NOT EXISTS descripcion VARCHAR(500);
+
+-- 9) Reglas de la validacion de materiales que antes solo vivian en la aplicacion:
+--    rechazar exige una observacion y todo material no PENDIENTE tiene quien lo valido.
+ALTER TABLE material DROP CONSTRAINT IF EXISTS ck_material_rechazo;
+ALTER TABLE material ADD CONSTRAINT ck_material_rechazo CHECK (
+    estado <> 'RECHAZADO' OR (observacion IS NOT NULL AND btrim(observacion) <> '')
+);
+ALTER TABLE material DROP CONSTRAINT IF EXISTS ck_material_validado;
+ALTER TABLE material ADD CONSTRAINT ck_material_validado CHECK (
+    estado = 'PENDIENTE' OR validado_por IS NOT NULL
+);
+
+-- 10) Una emision con fin debe terminar despues de empezar (NO_EMITIDO no tiene fin_real).
+ALTER TABLE emision DROP CONSTRAINT IF EXISTS ck_emision_fin;
+ALTER TABLE emision ADD CONSTRAINT ck_emision_fin CHECK (fin_real IS NULL OR fin_real > inicio_real);
+
+-- 11) Publicar una parrilla: debe tener bloques y cada bloque PROGRAMA un material activo y APROBADO
+--     (la misma regla que NParrilla.publicar). Solo se revisa en el cambio a PUBLICADA: rechazar
+--     un material despues no invalida una parrilla ya publicada.
+CREATE OR REPLACE FUNCTION fn_validar_publicacion() RETURNS trigger AS $$
+DECLARE
+    malo RECORD;
+BEGIN
+    IF NEW.estado = 'PUBLICADA' AND OLD.estado IS DISTINCT FROM 'PUBLICADA' THEN
+        IF NOT EXISTS (SELECT 1 FROM bloque WHERE id_parrilla = NEW.id_parrilla) THEN
+            RAISE EXCEPTION 'No se puede publicar una parrilla sin bloques.';
+        END IF;
+        SELECT b.hora_inicio, m.codigo, m.estado, m.activo INTO malo
+        FROM bloque b LEFT JOIN material m ON m.id_material = b.id_material
+        WHERE b.id_parrilla = NEW.id_parrilla AND b.tipo = 'PROGRAMA'
+          AND (m.id_material IS NULL OR m.estado <> 'APROBADO' OR NOT m.activo)
+        ORDER BY b.hora_inicio LIMIT 1;
+        IF FOUND THEN
+            RAISE EXCEPTION 'El bloque de las % no tiene un material activo y APROBADO (material: %, estado: %).',
+                malo.hora_inicio, coalesce(malo.codigo, 'sin asignar'), coalesce(malo.estado, '-');
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_validar_publicacion ON parrilla;
+CREATE TRIGGER trg_validar_publicacion
+    BEFORE UPDATE OF estado ON parrilla
+    FOR EACH ROW EXECUTE FUNCTION fn_validar_publicacion();
+
+-- 12) Spot: la fecha de la parrilla debe estar dentro de la vigencia de la pauta y no superar
+--     max_pases (cuenta los spots de la pauta que no estan NO_EMITIDO). Se agrega como segundo
+--     trigger para no tocar fn_validar_spot.
+CREATE OR REPLACE FUNCTION fn_validar_spot_pauta() RETURNS trigger AS $$
+DECLARE
+    pa pauta%ROWTYPE;
+    f  DATE;
+    usados INTEGER;
+BEGIN
+    SELECT * INTO pa FROM pauta WHERE id_pauta = NEW.id_pauta;
+    SELECT p.fecha INTO f FROM bloque b JOIN parrilla p ON p.id_parrilla = b.id_parrilla WHERE b.id_bloque = NEW.id_bloque;
+    IF f < pa.fecha_inicio OR f > pa.fecha_fin THEN
+        RAISE EXCEPTION 'La fecha % esta fuera de la vigencia de la pauta % (% a %).', f, pa.nombre, pa.fecha_inicio, pa.fecha_fin;
+    END IF;
+    SELECT count(*) INTO usados FROM spot
+    WHERE id_pauta = NEW.id_pauta AND estado <> 'NO_EMITIDO'
+      AND id_spot IS DISTINCT FROM NEW.id_spot;
+    IF usados >= pa.max_pases THEN
+        RAISE EXCEPTION 'La pauta % ya alcanzo su maximo de % pases.', pa.nombre, pa.max_pases;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_validar_spot_pauta ON spot;
+CREATE TRIGGER trg_validar_spot_pauta
+    BEFORE INSERT OR UPDATE OF id_pauta, id_bloque ON spot
+    FOR EACH ROW EXECUTE FUNCTION fn_validar_spot_pauta();
+
+-- 13) Auditoria de solo insercion: nadie (ni el dueno de la app) modifica ni borra lo registrado.
+--     No impide que un administrador de la BD elimine el trigger; para eso hay que quitar
+--     UPDATE/DELETE al rol de la aplicacion.
+CREATE OR REPLACE FUNCTION fn_auditoria_inmutable() RETURNS trigger AS $$
+BEGIN
+    RAISE EXCEPTION 'La auditoria es de solo insercion: no se permite % sobre auditoria.', TG_OP;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_auditoria_inmutable ON auditoria;
+CREATE TRIGGER trg_auditoria_inmutable
+    BEFORE UPDATE OR DELETE ON auditoria
+    FOR EACH ROW EXECUTE FUNCTION fn_auditoria_inmutable();
+
+DROP TRIGGER IF EXISTS trg_auditoria_sin_truncate ON auditoria;
+CREATE TRIGGER trg_auditoria_sin_truncate
+    BEFORE TRUNCATE ON auditoria
+    FOR EACH STATEMENT EXECUTE FUNCTION fn_auditoria_inmutable();
+
 -- 7) Rol PRODUCCION (el departamento que arma y transmite la senal). Para bases creadas antes
 --    de que 01_tablas.sql lo incluyera: se reemplaza el CHECK de usuario.rol.
 ALTER TABLE usuario DROP CONSTRAINT IF EXISTS usuario_rol_check;
