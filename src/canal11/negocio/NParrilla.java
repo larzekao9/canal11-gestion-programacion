@@ -6,6 +6,7 @@ import canal11.datos.DParrilla;
 import canal11.datos.DPrograma;
 
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -19,7 +20,8 @@ import java.util.List;
  *    bloques o parrillas que ya tienen spots programados (primero se quitan con eliSpo).
  *  - Bloque: hora_fin > hora_inicio y sin solapar con otros bloques del mismo dia.
  *    PROGRAMA lleva un programa activo (obligatorio); PAUSA_COMERCIAL no lleva programa ni material.
- *    El material, si se indica, debe existir y estar activo.
+ *    El material, si se indica, debe existir y estar activo, no ser un SPOT, pertenecer al programa del bloque
+ *    (si tiene programa) y no durar mas que el bloque.
  *  - pubPar: ERRORES que impiden publicar: parrilla sin bloques, bloques PROGRAMA sin material, con material
  *    dado de baja o no APROBADO. AVISOS (no impiden): huecos entre bloques. Al publicar: estado PUBLICADA y
  *    fecha_publicacion = ahora. La parrilla publicada es la unica fuente del orden de transmision.
@@ -129,6 +131,8 @@ public class NParrilla {
                 v.error("No existe el material <b>" + Validador.esc(material) + "</b>. Consulte los materiales con lisMat[\"*\"].");
             } else if (!materiales.estaActivo(idMaterial)) {
                 v.error("El material <b>" + Validador.esc(material) + "</b> está dado de baja.");
+            } else {
+                validarMaterialDelBloque(v, materiales.obtener(idMaterial), programa, inicio, fin);
             }
         }
         v.verificar();
@@ -136,6 +140,28 @@ public class NParrilla {
         int id = bloques.insertar(idParrilla, idPrograma, idMaterial, inicio, fin, tipo);
         auditoria.registrar(quien, NAuditoria.INSERTAR, "bloque", id,
                 fecha + " " + inicio + "-" + fin + " " + tipo + (programa != null ? " " + programa : ""), "insBlo");
+    }
+
+    /**
+     * El material de un bloque PROGRAMA debe corresponder al bloque: no puede ser un SPOT (esos van en una pausa con insSpo),
+     * si tiene programa debe ser el del bloque, y no puede durar mas que el bloque.
+     * (Un material mas corto que el bloque si se permite: el hueco lo ve el equipo en estPar/conPar.)
+     */
+    private void validarMaterialDelBloque(Validador v, String[] m, String programa, LocalTime inicio, LocalTime fin) {
+        String codigo = Validador.esc(m[1]);
+        if ("SPOT".equals(m[3])) {
+            v.error("El material <b>" + codigo + "</b> es un SPOT: los spots se ubican en una PAUSA_COMERCIAL con insSpo, no en un bloque PROGRAMA.");
+        }
+        if (programa != null && !m[4].isEmpty() && !m[4].equalsIgnoreCase(programa.trim())) {
+            v.error("El material <b>" + codigo + "</b> pertenece al programa <b>" + Validador.esc(m[4])
+                    + "</b>, pero el bloque es de <b>" + Validador.esc(programa) + "</b>.");
+        }
+        long duracionBloque = Duration.between(inicio, fin).getSeconds();
+        int duracionMaterial = Integer.parseInt(m[5]);
+        if (duracionMaterial > duracionBloque) {
+            v.error("El material <b>" + codigo + "</b> dura " + duracionMaterial + " s y el bloque solo " + duracionBloque
+                    + " s (" + inicio + "-" + fin + "): no cabe.");
+        }
     }
 
     /** eliBlo["fecha","hora_inicio"]. */

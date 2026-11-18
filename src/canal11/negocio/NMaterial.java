@@ -14,6 +14,7 @@ import java.util.List;
  *  - La ruta es unica: si ya existe, se informa el codigo del material que la usa (evita archivos duplicados).
  *  - Estado inicial PENDIENTE; registrado_por = quien envia el comando.
  *  - modMat: si cambia la ruta o la duracion de un material APROBADO, vuelve a PENDIENTE (hay que validarlo de nuevo).
+ *    Si el material esta en una parrilla PUBLICADA no se permite cambiar ruta, duracion ni tipo (el titulo, programa y formato si se pueden cambiar).
  *  - eliMat es baja logica y NO se permite si esta en una parrilla PUBLICADA o en un spot programado.
  *  - Cada alta, modificacion y baja se registra en la auditoria.
  */
@@ -104,6 +105,13 @@ public class NMaterial {
         String[] actual = datos.obtener(id);
         boolean cambioContenido = !actual[7].equalsIgnoreCase(ruta) || !actual[5].equals(String.valueOf(duracion));
         boolean volverAPendiente = "APROBADO".equals(actual[8]) && cambioContenido;
+        int enPublicadas = datos.contarEnParrillasPublicadas(id);
+        if (enPublicadas > 0 && (cambioContenido || !actual[3].equals(tipo))) {
+            v.error("El material <b>" + Validador.esc(actual[1]) + "</b> está en " + enPublicadas + " bloque(s) de parrillas PUBLICADAS: "
+                    + "no se puede cambiar su ruta, duración ni tipo (volvería a PENDIENTE y la parrilla publicada quedaría inconsistente). "
+                    + "Registre un material nuevo y cámbielo en la parrilla.");
+            v.verificar();
+        }
 
         datos.modificar(id, idPrograma, titulo, tipo, duracion, formato, ruta, volverAPendiente);
         auditoria.registrar(quien, NAuditoria.MODIFICAR, "material", id,

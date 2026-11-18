@@ -70,3 +70,19 @@ larzekaobnc@gmail.com | insPar["2030-11-24"]
 larzekaobnc@gmail.com | insBlo["2030-11-24","20:00","21:00","PROGRAMA","Noticiero Central",""]
 larzekaobnc@gmail.com | eliPro["Noticiero Central"]
 larzekaobnc@gmail.com | eliPar["2030-11-24"]
+
+# --- el material de un bloque debe corresponder al bloque (insBlo) y no se cambia si ya esta publicado (modMat) ---
+larzekaobnc@gmail.com | insPro["Prueba Bloque","x","NOTICIERO","60","Info","ATP"]
+larzekaobnc@gmail.com | insPro["Prueba Cine","x","PELICULA","90","Drama","ATP"]
+larzekaobnc@gmail.com | insMat["PB-NOT","Noticiero prueba","PROGRAMA","Prueba Bloque","3600","MP4","/pb/not.mp4"]
+larzekaobnc@gmail.com | insMat["PB-SPOT","Spot prueba","SPOT","","30","MP4","/pb/spot.mp4"]
+larzekaobnc@gmail.com | insMat["PB-LARGO","Pelicula larga","PROGRAMA","Prueba Cine","7200","MP4","/pb/largo.mp4"]
+larzekaobnc@gmail.com | insPar["2030-12-01"]
+larzekaobnc@gmail.com | insBlo["2030-12-01","20:00","21:00","PROGRAMA","Prueba Bloque","PB-SPOT"]    # error: es un SPOT
+larzekaobnc@gmail.com | insBlo["2030-12-01","21:00","22:00","PROGRAMA","Prueba Bloque","PB-LARGO"]   # 2 errores: otro programa y no cabe
+larzekaobnc@gmail.com | insBlo["2030-12-01","22:00","23:00","PROGRAMA","Prueba Bloque","PB-NOT"]     # ok
+larzekaobnc@gmail.com | valMat["PB-NOT","APROBADO","ok"]
+larzekaobnc@gmail.com | pubPar["2030-12-01"]
+larzekaobnc@gmail.com | modMat["PB-NOT","Noticiero prueba","PROGRAMA","Prueba Bloque","3500","MP4","/pb/not.mp4"]        # error: duracion de material publicado
+larzekaobnc@gmail.com | modMat["PB-NOT","Noticiero prueba","PROGRAMA","Prueba Bloque","3600","MP4","/pb/otra.mp4"]      # error: ruta de material publicado
+larzekaobnc@gmail.com | modMat["PB-NOT","Noticiero editado","PROGRAMA","Prueba Bloque","3600","MP4","/pb/not.mp4"]      # ok: solo cambia el titulo
