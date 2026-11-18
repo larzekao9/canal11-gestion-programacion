@@ -47,7 +47,7 @@ public class Ayuda {
                     Html.codigo("help[\"" + cu.getNumero() + "\"]")});
         }
         String html = Html.parrafo("Escriba el comando en el <b>asunto</b> del correo y envíelo a esta misma dirección. "
-                + "Los parámetros van entre comillas dobles y separados por comas.")
+                + "Los parámetros van entre comillas dobles y separados por comas. Para una comilla dentro de un parámetro use \\\" o \"\".")
                 + Html.parrafo("Formato: " + Html.codigo("comando[\"parametro1\",\"parametro2\",...]"))
                 + Html.subtitulo("Casos de uso disponibles para su rol")
                 + Html.tablaHtml(new String[]{"N°", "Caso de uso", "Comandos", "Ver comandos"}, filas)

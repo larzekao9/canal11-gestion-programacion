@@ -66,7 +66,12 @@ public final class Interprete {
         return PREFIJOS.matcher(s).replaceFirst("").trim();
     }
 
-    /** Separa por comas respetando las comas que esten dentro de comillas. Las comillas son opcionales. */
+    /**
+     * Separa por comas respetando las comas que esten dentro de comillas. Las comillas son opcionales.
+     * Dentro de un parametro entre comillas, una comilla doble literal se escribe \" o "" (como en CSV):
+     * insPro["Dijo \"hola\", adios","x"]  ->  Dijo "hola", adios  y  x.
+     * Cualquier otra barra invertida se conserva tal cual (rutas como D:\videos\nota.mp4 o \\servidor\carpeta).
+     */
     private static List<String> separarParametros(String texto) throws ComandoException {
         List<String> lista = new ArrayList<>();
         if (texto.isBlank()) {
@@ -76,7 +81,14 @@ public final class Interprete {
         boolean enComillas = false;
         for (int i = 0; i < texto.length(); i++) {
             char c = texto.charAt(i);
-            if (c == '"') {
+            char siguiente = i + 1 < texto.length() ? texto.charAt(i + 1) : '\0';
+            if (enComillas && c == '\\' && siguiente == '"') {
+                actual.append('"');
+                i++;
+            } else if (enComillas && c == '"' && siguiente == '"') {
+                actual.append('"');
+                i++;
+            } else if (c == '"') {
                 enComillas = !enComillas;
             } else if (c == ',' && !enComillas) {
                 lista.add(actual.toString().trim());

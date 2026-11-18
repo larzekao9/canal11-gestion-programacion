@@ -79,7 +79,7 @@ Scripts: [`sql/01_tablas.sql`](sql/01_tablas.sql) (tablas), `02_datos.sql` (admi
 
 - **Inyección SQL:** toda consulta usa `PreparedStatement`; ningún dato del correo se concatena al SQL.
 - **Validación:** `Validador` revisa tipos, formatos, rangos y reglas de negocio **antes** de tocar la base y devuelve todos los errores juntos.
-- **Parsing robusto:** tolera espacios extra, comillas tipográficas (celulares, Word), `RE:`/`Fwd:`, UTF-8 y comas dentro de comillas.
+- **Parsing robusto:** tolera espacios extra, comillas tipográficas (celulares, Word), `RE:`/`Fwd:`, UTF-8, comas dentro de comillas y comillas dobles escapadas dentro de un parámetro (`\"` o `""`: `insPro["Dijo \"hola\"","x"]` → `Dijo "hola"`). Otras barras invertidas se conservan (rutas `D:\videos\nota.mp4`).
 - **Permisos por rol:** el rol del remitente decide qué comandos puede usar.
 - **Logs locales** (carpeta `logs/`, creada sola; no se sube a git):
   - `logs/access.log`: cada correo recibido (`CORREO`), ignorado (`IGNORADO`), comando ejecutado con resultado y tiempo (`COMANDO`) y respuesta enviada (`RESPUESTA`).
