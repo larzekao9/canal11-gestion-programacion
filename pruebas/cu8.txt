@@ -7,6 +7,9 @@
 # Estos reportes solo leen: no modifican la base.
 
 # --- ayuda ---
+# Hora fija del sistema para que las fechas de prueba (2030/2031) sean futuras. La directiva @ahora la entiende --lote.
+@ahora 2029-01-01T10:00
+
 larzekaobnc@gmail.com | help["8"]
 
 # --- casos correctos (repMat cuenta lo registrado "hoy" por las pruebas: si hoy no cae en 2026, cambie ese rango) ---

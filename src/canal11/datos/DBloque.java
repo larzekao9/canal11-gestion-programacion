@@ -20,13 +20,13 @@ public class DBloque {
      * Columnas de los bloques de una parrilla, ordenados por hora (en este orden):
      * 0 id, 1 hora inicio (HH:MM:SS), 2 hora fin (HH:MM:SS), 3 tipo, 4 programa, 5 codigo del material,
      * 6 estado del material (PENDIENTE, APROBADO, RECHAZADO; vacio si no tiene), 7 material activo (Sí/No; vacio si no tiene),
-     * 8 observacion de la validacion del material
+     * 8 observacion de la validacion del material, 9 cantidad de notas de su escaleta
      */
     private static final String SELECT =
             "SELECT b.id_bloque, to_char(b.hora_inicio, 'HH24:MI:SS'), to_char(b.hora_fin, 'HH24:MI:SS'), b.tipo,"
             + " coalesce(p.nombre, ''), coalesce(m.codigo, ''), coalesce(m.estado, ''),"
             + " CASE WHEN m.id_material IS NULL THEN '' WHEN m.activo THEN 'Sí' ELSE 'No' END,"
-            + " coalesce(m.observacion, '')"
+            + " coalesce(m.observacion, ''), (SELECT count(*) FROM escaleta e WHERE e.id_bloque = b.id_bloque)"
             + " FROM bloque b"
             + " LEFT JOIN programa p ON p.id_programa = b.id_programa"
             + " LEFT JOIN material m ON m.id_material = b.id_material";
@@ -114,6 +114,16 @@ public class DBloque {
                 rs.next();
                 return rs.getInt(1);
             }
+        }
+    }
+
+    /** Cambia el material del bloque. */
+    public int cambiarMaterial(int idBloque, int idMaterial) throws SQLException {
+        try (Connection c = Conexion.abrir();
+             PreparedStatement ps = c.prepareStatement("UPDATE bloque SET id_material = ? WHERE id_bloque = ?")) {
+            ps.setInt(1, idMaterial);
+            ps.setInt(2, idBloque);
+            return ps.executeUpdate();
         }
     }
 

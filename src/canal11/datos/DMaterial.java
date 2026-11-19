@@ -130,11 +130,44 @@ public class DMaterial {
         }
     }
 
-    /** Cantidad de bloques de parrillas PUBLICADAS que usan el material. */
+    /** Cantidad de bloques de parrillas PUBLICADAS que usan el material, directamente o en una escaleta. */
     public int contarEnParrillasPublicadas(int id) throws SQLException {
-        String sql = "SELECT count(*) FROM bloque b JOIN parrilla p ON p.id_parrilla = b.id_parrilla"
-                + " WHERE b.id_material = ? AND p.estado = 'PUBLICADA'";
-        return contar(sql, id);
+        String sql = "SELECT (SELECT count(*) FROM bloque b JOIN parrilla p ON p.id_parrilla = b.id_parrilla"
+                + "           WHERE b.id_material = ? AND p.estado = 'PUBLICADA')"
+                + "     + (SELECT count(*) FROM escaleta e JOIN bloque b ON b.id_bloque = e.id_bloque"
+                + "           JOIN parrilla p ON p.id_parrilla = b.id_parrilla WHERE e.id_material = ? AND p.estado = 'PUBLICADA')";
+        try (Connection c = Conexion.abrir(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.setInt(2, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
+    }
+
+    /** Id del usuario que registro el material. */
+    public int registradoPor(int id) throws SQLException {
+        return contar("SELECT registrado_por FROM material WHERE id_material = ?", id);
+    }
+
+    /** Codigos de otros materiales activos con el mismo titulo, tipo y duracion (posibles duplicados con otra ruta). */
+    public List<String> buscarSimilares(String titulo, String tipo, int duracionSeg, int excluirId) throws SQLException {
+        String sql = "SELECT codigo FROM material WHERE lower(titulo) = lower(?) AND tipo = ? AND duracion_seg = ?"
+                + " AND id_material <> ? AND activo ORDER BY codigo";
+        List<String> codigos = new java.util.ArrayList<>();
+        try (Connection c = Conexion.abrir(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, titulo);
+            ps.setString(2, tipo);
+            ps.setInt(3, duracionSeg);
+            ps.setInt(4, excluirId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    codigos.add(rs.getString(1));
+                }
+            }
+        }
+        return codigos;
     }
 
     /** Cantidad de spots PROGRAMADOS que usan el material. */
@@ -178,7 +211,8 @@ public class DMaterial {
     public int modificar(int id, Integer idPrograma, String titulo, String tipo, int duracionSeg, String formato, String ruta,
                          boolean volverAPendiente) throws SQLException {
         String sql = "UPDATE material SET id_programa = ?, titulo = ?, tipo = ?, duracion_seg = ?, formato = ?, ruta = ?"
-                + (volverAPendiente ? ", estado = 'PENDIENTE', observacion = NULL, validado_por = NULL, fecha_validacion = NULL" : "")
+                + (volverAPendiente ? ", estado = 'PENDIENTE', observacion = NULL, validado_por = NULL, fecha_validacion = NULL,"
+                + " pendiente_desde = now(), ultimo_aviso = NULL, avisos = 0" : "")
                 + " WHERE id_material = ?";
         try (Connection c = Conexion.abrir(); PreparedStatement ps = c.prepareStatement(sql)) {
             enteroONulo(ps, 1, idPrograma);
@@ -205,6 +239,58 @@ public class DMaterial {
             }
             ps.setInt(3, validadoPor);
             ps.setInt(4, id);
+            return ps.executeUpdate();
+        }
+    }
+
+    /** lisMat["VENCIDO"]: materiales PENDIENTES activos a los que ya se les envio aviso por falta de revision. */
+    public List<String[]> listarVencidos() throws SQLException {
+        String sql = SELECT + " WHERE m.estado = 'PENDIENTE' AND m.activo AND m.avisos > 0 ORDER BY m.pendiente_desde, m.codigo";
+        try (Connection c = Conexion.abrir(); PreparedStatement ps = c.prepareStatement(sql)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                return Conexion.leerFilas(rs);
+            }
+        }
+    }
+
+    /**
+     * Materiales PENDIENTES y activos que deben recibir el aviso del nivel dado.
+     * Nivel 1 (recordatorio): sin avisos y pendiente desde hace [minAviso, minEscalar) minutos.
+     * Nivel 2 (escalamiento): con menos de 2 avisos y pendiente desde hace minEscalar minutos o mas.
+     * Columnas: 0 id, 1 codigo, 2 titulo, 3 tipo, 4 registrado por, 5 pendiente desde, 6 minutos pendiente
+     */
+    public List<String[]> pendientesDeAviso(int nivel, int minAviso, int minEscalar) throws SQLException {
+        String condicion = nivel == 2
+                ? "m.avisos < 2 AND m.pendiente_desde <= now() - make_interval(mins => ?)"
+                : "m.avisos = 0 AND m.pendiente_desde <= now() - make_interval(mins => ?)"
+                  + " AND m.pendiente_desde > now() - make_interval(mins => ?)";
+        String sql = "SELECT m.id_material, m.codigo, m.titulo, m.tipo, r.nombre || ' ' || r.apellido,"
+                + " to_char(m.pendiente_desde, 'DD/MM/YYYY HH24:MI'),"
+                + " (extract(epoch FROM now() - m.pendiente_desde) / 60)::int"
+                + " FROM material m JOIN usuario r ON r.id_usuario = m.registrado_por"
+                + " WHERE m.estado = 'PENDIENTE' AND m.activo AND " + condicion
+                + " ORDER BY m.pendiente_desde, m.codigo";
+        try (Connection c = Conexion.abrir(); PreparedStatement ps = c.prepareStatement(sql)) {
+            if (nivel == 2) {
+                ps.setInt(1, minEscalar);
+            } else {
+                ps.setInt(1, minAviso);
+                ps.setInt(2, minEscalar);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                return Conexion.leerFilas(rs);
+            }
+        }
+    }
+
+    /** Marca que se envio el aviso del nivel dado (solo si sigue PENDIENTE y aun no tenia ese nivel). */
+    public int marcarAviso(int id, int nivel) throws SQLException {
+        String sql = "UPDATE material SET avisos = ?, ultimo_aviso = now()"
+                + " WHERE id_material = ? AND estado = 'PENDIENTE' AND avisos < ?";
+        try (Connection c = Conexion.abrir(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, nivel);
+            ps.setInt(2, id);
+            ps.setInt(3, nivel);
             return ps.executeUpdate();
         }
     }

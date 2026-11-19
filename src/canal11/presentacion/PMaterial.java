@@ -48,10 +48,25 @@ public class PMaterial {
     public Respuesta insertar(Usuario u, List<String> p) throws Exception {
         int id = negocio.insertar(u, p);
         String[] f = negocio.mostrar(String.valueOf(id));
+        String duplicado = duplicados(id);
         return new Respuesta("Material registrado",
                 Html.exito("El material <b>" + Html.esc(f[1]) + "</b> fue registrado en estado <b>PENDIENTE</b>. "
                         + "Un Encargado o Administrador debe validarlo antes de usarlo en la parrilla.")
-                        + Html.ficha(COLUMNAS, f) + acciones(f));
+                        + duplicado + Html.ficha(COLUMNAS, f) + acciones(f));
+    }
+
+    /** Advertencia (no bloquea) si ya hay otro material activo con el mismo titulo, tipo y duracion. */
+    private String duplicados(int id) throws Exception {
+        List<String> codigos = negocio.posiblesDuplicados(id);
+        if (codigos.isEmpty()) {
+            return "";
+        }
+        List<String> items = new ArrayList<>();
+        for (String c : codigos) {
+            items.add(Html.codigo("mosMat[\"" + c + "\"]"));
+        }
+        return Html.info("<b>Posible duplicado:</b> ya hay material(es) activo(s) con el mismo título, tipo y duración. "
+                + "Si es el mismo video, dé de baja uno; si es otra versión, ignore este aviso." + Html.lista(items));
     }
 
     /** modMat["codigo","titulo","tipo","programa","duracion_seg","formato","ruta"] */
@@ -63,7 +78,7 @@ public class PMaterial {
                 ? Html.info("Cambió la ruta o la duración de un material aprobado: volvió a <b>PENDIENTE</b> y debe validarse de nuevo.")
                 : "";
         return new Respuesta("Material modificado",
-                Html.exito("Los datos del material fueron actualizados.") + aviso + Html.ficha(COLUMNAS, f) + acciones(f));
+                Html.exito("Los datos del material fueron actualizados.") + aviso + duplicados(id) + Html.ficha(COLUMNAS, f) + acciones(f));
     }
 
     /** eliMat["codigo"] */

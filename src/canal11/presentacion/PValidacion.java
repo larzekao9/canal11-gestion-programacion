@@ -1,5 +1,7 @@
 package canal11.presentacion;
 
+import canal11.datos.DMaterial;
+import canal11.negocio.NAviso;
 import canal11.negocio.NMaterial;
 import canal11.negocio.NParrilla;
 import canal11.negocio.NValidacion;
@@ -17,6 +19,8 @@ public class PValidacion {
     private final NValidacion negocio = new NValidacion();
     private final NMaterial materiales = new NMaterial();
     private final NParrilla parrillas = new NParrilla();
+    private final NAviso avisos = new NAviso();
+    private final DMaterial datosMaterial = new DMaterial();
 
     /** valMat["codigo","estado","observacion"] */
     public Respuesta validar(Usuario u, List<String> p) throws Exception {
@@ -30,8 +34,28 @@ public class PValidacion {
                 + Html.parrafo("Materiales pendientes: " + Html.codigo("lisMat[\"PENDIENTE\"]"))
                 + (aprobado ? "" : Html.parrafo("Tras corregirlo, modifique el material " + Html.codigo("mosMat[\"" + f[1] + "\"]")
                 + " y apruébelo con " + Html.codigo("valMat[\"" + f[1] + "\",\"APROBADO\",\"Corregido\"]")));
+        avisarAlRegistrante(u, id, f, aprobado);
         return new Respuesta(aprobado ? "Material aprobado" : "Material rechazado",
                 aviso + Html.ficha(PMaterial.COLUMNAS, f) + siguiente);
+    }
+
+    /** Quien registro el material se entera del resultado sin tener que consultar (antes el rechazo solo lo veia Prensa). */
+    private void avisarAlRegistrante(Usuario validador, int idMaterial, String[] f, boolean aprobado) throws Exception {
+        if (!Notificador.activo()) {
+            return;
+        }
+        String destino = avisos.emailDeUsuario(datosMaterial.registradoPor(idMaterial));
+        if (destino == null || destino.equalsIgnoreCase(validador.getEmail())) {
+            return;
+        }
+        String titulo = (aprobado ? "Material aprobado: " : "Material rechazado: ") + f[1];
+        String cuerpo = Html.parrafo(Html.esc(validador.getNombre()) + " (" + Html.esc(validador.getRol().getNombre()) + ") "
+                + (aprobado ? "<b>aprobó</b> su material <b>" + Html.esc(f[1]) + "</b>. Ya puede usarse en la parrilla y en spots."
+                : "<b>rechazó</b> su material <b>" + Html.esc(f[1]) + "</b>."))
+                + (aprobado ? "" : Html.error("<b>Motivo:</b> " + Html.esc(f[9]))
+                + Html.parrafo("Corríjalo con " + Html.codigo("modMat[...]") + " y avise a Prensa para que lo apruebe de nuevo."))
+                + Html.ficha(PMaterial.COLUMNAS, f);
+        Notificador.enviar(List.of(destino), titulo, cuerpo);
     }
 
     /** estPar["fecha"] */
@@ -81,6 +105,9 @@ public class PValidacion {
     // ------------------------------------------------------------------ auxiliares
 
     private static String siguientePaso(String fecha, String[] b) {
+        if (b[4].startsWith("ESCALETA")) { // las notas se resuelven una a una desde la escaleta
+            return NValidacion.LISTO.equals(b[5]) ? "" : "Revise las notas: " + Html.codigo("lisLea[\"" + fecha + "\",\"" + hora(b[0]) + "\"]");
+        }
         switch (b[5]) {
             case "PENDIENTE":
                 return Html.codigo("valMat[\"" + b[4] + "\",\"APROBADO\",\"observación\"]");
@@ -115,6 +142,9 @@ public class PValidacion {
 
     /** "20:00:00" -> "20:00"; "20:00:30" se deja igual. */
     private static String hora(String h) {
+        if (h.equals("23:59:59")) {
+            return "24:00"; // fin del dia
+        }
         return h.endsWith(":00") && h.length() == 8 ? h.substring(0, 5) : h;
     }
 }

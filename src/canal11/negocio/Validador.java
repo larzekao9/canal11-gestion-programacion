@@ -201,4 +201,18 @@ public class Validador {
             return null;
         }
     }
+
+    /** Ultimo segundo del dia: asi se guarda un bloque que termina a las 24:00. */
+    public static final LocalTime FIN_DEL_DIA = LocalTime.of(23, 59, 59);
+
+    /**
+     * Hora de fin de un bloque: como hora(), pero acepta 24:00 (fin del dia), que se guarda como 23:59:59.
+     * Un bloque que cruza la medianoche se parte en dos: hasta 24:00 en la parrilla de un dia y desde 00:00 en la del siguiente.
+     */
+    public LocalTime horaFin(String valor, String campo) {
+        if (valor != null && valor.trim().matches("24:00(:00)?")) {
+            return FIN_DEL_DIA;
+        }
+        return hora(valor, campo);
+    }
 }

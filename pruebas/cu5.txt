@@ -7,6 +7,9 @@
 # OJO: aprueba y rechaza materiales y crea parrillas en la base configurada (fechas de 2031).
 
 # --- ayuda ---
+# Hora fija del sistema para que las fechas de prueba (2030/2031) sean futuras. La directiva @ahora la entiende --lote.
+@ahora 2029-01-01T10:00
+
 larzekaobnc@gmail.com | help["5"]
 
 # --- validaciones de valMat (deben dar error) ---

@@ -41,11 +41,15 @@ public class DAuditoria {
         }
     }
 
-    public void insertar(int idUsuario, String accion, String entidad, Integer idEntidad, String detalle, String comando)
+    public void insertar(Integer idUsuario, String accion, String entidad, Integer idEntidad, String detalle, String comando)
             throws SQLException {
         String sql = "INSERT INTO auditoria (id_usuario, accion, entidad, id_entidad, detalle, comando) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection c = Conexion.abrir(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, idUsuario);
+            if (idUsuario == null) {
+                ps.setNull(1, Types.INTEGER); // accion automatica del sistema: se muestra como "(sistema)"
+            } else {
+                ps.setInt(1, idUsuario);
+            }
             ps.setString(2, accion);
             ps.setString(3, entidad);
             if (idEntidad == null) {

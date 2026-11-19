@@ -37,6 +37,32 @@ public class DUsuario {
         }
     }
 
+    /** Correo del usuario si esta activo; null si no existe o esta de baja. */
+    public String emailActivo(int id) throws SQLException {
+        try (Connection c = Conexion.abrir();
+             PreparedStatement ps = c.prepareStatement("SELECT email FROM usuario WHERE id_usuario = ? AND activo")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        }
+    }
+
+    /** Correos de los usuarios activos con ese rol (para los avisos automaticos). */
+    public List<String> emailsActivosPorRol(String rol) throws SQLException {
+        String sql = "SELECT email FROM usuario WHERE rol = ? AND activo ORDER BY id_usuario";
+        try (Connection c = Conexion.abrir(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, rol);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<String> emails = new java.util.ArrayList<>();
+                while (rs.next()) {
+                    emails.add(rs.getString(1));
+                }
+                return emails;
+            }
+        }
+    }
+
     /** rol != null: filtra por rol. texto != null: busca en nombre, apellido o email. Ambos null: todos. */
     public List<String[]> listar(String rol, String texto) throws SQLException {
         String sql = SELECT;

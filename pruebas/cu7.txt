@@ -6,6 +6,9 @@
 # OJO: crea pautas, parrillas, spots y emisiones en la base configurada (fechas de 2031).
 
 # --- ayuda ---
+# Hora fija del sistema para que las fechas de prueba (2030/2031) sean futuras. La directiva @ahora la entiende --lote.
+@ahora 2029-01-01T10:00
+
 larzekaobnc@gmail.com | help["7"]
 
 # --- preparacion: parrilla con 5 pausas comerciales (se publica sin materiales de programa) y una pauta con spots ---
@@ -23,6 +26,8 @@ larzekaobnc@gmail.com | insSpo["Emision Test","SPOT-BSOL-01","2031-05-10","11:00
 larzekaobnc@gmail.com | insSpo["Emision Test","SPOT-BSOL-01","2031-05-10","12:00","12:00:00"]
 
 # --- una parrilla en borrador no se concilia ---
+# Pasa el tiempo: ahora los bloques de la parrilla de 2031-05-10 ya empezaron y se puede registrar su emision.
+@ahora 2031-05-10T18:00
 larzekaobnc@gmail.com | insEmi["2031-05-10","10:00","10:00:05","10:10:00","EMITIDO"]
 larzekaobnc@gmail.com | conPar["2031-05-10"]
 larzekaobnc@gmail.com | pubPar["2031-05-10"]

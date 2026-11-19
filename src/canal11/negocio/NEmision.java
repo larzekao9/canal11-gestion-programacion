@@ -17,6 +17,7 @@ import java.util.List;
  *    La parrilla debe estar PUBLICADA (solo se concilia lo que se publico).
  *  - Estado: EMITIDO, PARCIAL o NO_EMITIDO. Para EMITIDO y PARCIAL, inicio_real y fin_real son horas HH:MM:SS
  *    del mismo dia y fin_real > inicio_real. Para NO_EMITIDO se envian "" (si se envian, se ignoran).
+ *  - Solo se registra lo que ya salio al aire: el bloque debe haber empezado (fecha y hora de inicio no futuras).
  *  - registrado_por = quien envia el comando.
  *  - Al registrar, los spots PROGRAMADOS del bloque se actualizan: EMITIDO -> EMITIDO; NO_EMITIDO -> NO_EMITIDO;
  *    PARCIAL -> EMITIDO los que caen entre inicio_real y fin_real y NO_EMITIDO los demas.
@@ -52,6 +53,10 @@ public class NEmision {
         }
         v.verificar();
 
+        if (fecha.isAfter(Reloj.hoy()) || (fecha.equals(Reloj.hoy()) && horaInicio.isAfter(Reloj.ahora().toLocalTime()))) {
+            throw new NegocioException("El bloque de las <b>" + horaInicio + "</b> del <b>" + fecha + "</b> todavía no empieza (ahora son las "
+                    + Reloj.ahora().toLocalTime().withNano(0) + " del " + Reloj.hoy() + "): solo se registra lo que ya salió al aire.");
+        }
         Integer idParrilla = parrillas.buscarId(fecha);
         if (idParrilla == null) {
             throw new NegocioException("No existe una parrilla para el <b>" + fecha + "</b>. Consulte las parrillas con lisPar[\"*\"].");

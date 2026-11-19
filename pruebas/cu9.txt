@@ -1,0 +1,99 @@
+# Pruebas de las mejoras de negocio: escaleta del noticiero, camBlo, reglas de fecha, cobertura 24 h,
+# validador distinto del registrante, duplicados y extension de la ruta.
+# Formato de cada linea:   remitente | asunto        (la linea  @ahora AAAA-MM-DDTHH:MM  fija la hora del sistema)
+# Ejecutar:  ejecutar.bat --lote pruebas\cu9.txt
+# Requiere: --instalar y haber corrido pruebas\cu1.txt (usuarios larzekaobnc@gmail.com = ADMINISTRADOR,
+#           ana.rojas@gmail.com = ENCARGADO, pedro.vaca@hotmail.com = PROGRAMADOR y produccion.canal11@gmail.com = PRODUCCION).
+# OJO: crea programas, materiales y parrillas en la base configurada (fechas de 2032).
+# Los avisos por correo (parrilla publicada, cambios, alertas) NO se envian en --lote: solo con el servidor corriendo.
+
+@ahora 2032-03-01T10:00
+
+# --- preparacion: un noticiero y una pelicula, y sus materiales (los registra Prensa) ---
+larzekaobnc@gmail.com | insPro["Noticiero Escaleta","Prueba de escaleta","NOTICIERO","60","Informativo","ATP"]
+larzekaobnc@gmail.com | insPro["Pelicula Escaleta","Prueba de cobertura","PELICULA","120","Drama","ATP"]
+ana.rojas@gmail.com | insMat["ESC-N1","Nota 1 obras","PROGRAMA","Noticiero Escaleta","600","MP4","/esc/n1.mp4"]
+ana.rojas@gmail.com | insMat["ESC-N2","Nota 2 clima","PROGRAMA","Noticiero Escaleta","900","MP4","/esc/n2.mp4"]
+ana.rojas@gmail.com | insMat["ESC-N3","Nota 3 deportes","PROGRAMA","Noticiero Escaleta","1200","MP4","/esc/n3.mp4"]
+ana.rojas@gmail.com | insMat["ESC-GRANDE","Reportaje largo","PROGRAMA","Noticiero Escaleta","3000","MP4","/esc/grande.mp4"]
+ana.rojas@gmail.com | insMat["ESC-PEL1","Pelicula uno","PROGRAMA","Pelicula Escaleta","6600","MP4","/esc/pel1.mp4"]
+ana.rojas@gmail.com | insMat["ESC-PEL2","Pelicula dos","PROGRAMA","Pelicula Escaleta","6600","MP4","/esc/pel2.mp4"]
+ana.rojas@gmail.com | insMat["ESC-PEL3","Pelicula tres","PROGRAMA","Pelicula Escaleta","6600","MP4","/esc/pel3.mp4"]
+
+# --- validador distinto del registrante: Prensa NO se aprueba lo que ella misma registro (error) ---
+ana.rojas@gmail.com | valMat["ESC-N1","APROBADO","Me lo apruebo yo"]
+# ... lo aprueba otra persona (el administrador)
+larzekaobnc@gmail.com | valMat["ESC-N1","APROBADO","Correcta"]
+larzekaobnc@gmail.com | valMat["ESC-N2","APROBADO","Correcta"]
+larzekaobnc@gmail.com | valMat["ESC-N3","APROBADO","Correcta"]
+larzekaobnc@gmail.com | valMat["ESC-GRANDE","APROBADO","Correcta"]
+larzekaobnc@gmail.com | valMat["ESC-PEL1","APROBADO","Correcta"]
+larzekaobnc@gmail.com | valMat["ESC-PEL2","APROBADO","Correcta"]
+# ESC-PEL3 queda PENDIENTE a proposito
+
+# --- posible duplicado (misma titulo, tipo y duracion): se registra pero avisa ---
+ana.rojas@gmail.com | insMat["ESC-DUP","Nota 1 obras","PROGRAMA","Noticiero Escaleta","600","MP4","/esc/n1_copia.mp4"]
+# --- la extension de la ruta debe coincidir con el formato (error) ---
+ana.rojas@gmail.com | insMat["ESC-EXT","Mal formato","PROGRAMA","Noticiero Escaleta","60","MP4","/esc/mal.mov"]
+
+# --- fechas: no se crea una parrilla en el pasado (error) ---
+pedro.vaca@hotmail.com | insPar["2032-02-28"]
+
+# --- parrilla de 24 h: la pelicula de la madrugada y una que llega hasta las 24:00 ---
+pedro.vaca@hotmail.com | insPar["2032-03-02"]
+pedro.vaca@hotmail.com | insBlo["2032-03-02","00:00","02:00","PROGRAMA","Pelicula Escaleta","ESC-PEL1"]
+pedro.vaca@hotmail.com | insBlo["2032-03-02","20:00","21:00","PROGRAMA","Noticiero Escaleta",""]
+pedro.vaca@hotmail.com | insBlo["2032-03-02","21:00","24:00","PROGRAMA","Pelicula Escaleta","ESC-PEL2"]
+# hora_fin invalida y bloque PROGRAMA con material pendiente (errores)
+pedro.vaca@hotmail.com | insBlo["2032-03-02","23:00","25:00","PROGRAMA","Pelicula Escaleta",""]
+
+# --- escaleta del noticiero (solo Prensa y el administrador) ---
+ana.rojas@gmail.com | insLea["2032-03-02","20:00","1","ESC-N1"]
+ana.rojas@gmail.com | insLea["2032-03-02","20:00","2","ESC-N2"]
+ana.rojas@gmail.com | insLea["2032-03-02","20:00","1","ESC-N3"]
+ana.rojas@gmail.com | lisLea["2032-03-02","20:00"]
+ana.rojas@gmail.com | modLea["2032-03-02","20:00","ESC-N2","1"]
+ana.rojas@gmail.com | lisLea["2032-03-02","20:00"]
+# errores: nota repetida, orden fuera de rango, nota pendiente, no cabe, bloque que no es de noticias, sin permiso
+ana.rojas@gmail.com | insLea["2032-03-02","20:00","4","ESC-N1"]
+ana.rojas@gmail.com | insLea["2032-03-02","20:00","9","ESC-GRANDE"]
+ana.rojas@gmail.com | insLea["2032-03-02","20:00","4","ESC-GRANDE"]
+ana.rojas@gmail.com | insLea["2032-03-02","00:00","1","ESC-N1"]
+pedro.vaca@hotmail.com | insLea["2032-03-02","20:00","1","ESC-N1"]
+produccion.canal11@gmail.com | lisLea["2032-03-02","20:00"]
+ana.rojas@gmail.com | eliLea["2032-03-02","20:00","ESC-N3"]
+ana.rojas@gmail.com | eliLea["2032-03-02","20:00","ESC-N3"]
+ana.rojas@gmail.com | lisLea["2032-03-02","20:00"]
+
+# --- estado y publicacion: el noticiero se valida por sus notas; avisa los huecos y la cobertura del dia ---
+pedro.vaca@hotmail.com | estPar["2032-03-02"]
+pedro.vaca@hotmail.com | pubPar["2032-03-02"]
+pedro.vaca@hotmail.com | mosPar["2032-03-02"]
+
+# --- camBlo: cambio de ultimo momento en una parrilla PUBLICADA ---
+# error: el material pendiente, el mismo material, el bloque con escaleta, una pausa, sin permiso
+pedro.vaca@hotmail.com | camBlo["2032-03-02","00:00","ESC-PEL3"]
+pedro.vaca@hotmail.com | camBlo["2032-03-02","00:00","ESC-PEL1"]
+pedro.vaca@hotmail.com | camBlo["2032-03-02","20:00","ESC-PEL2"]
+produccion.canal11@gmail.com | camBlo["2032-03-02","21:00","ESC-PEL1"]
+# ok: se cambia la pelicula de las 21:00 por otra aprobada que cabe (ESC-PEL1 dura 6600 s y el bloque es de 3 h)
+pedro.vaca@hotmail.com | camBlo["2032-03-02","21:00","ESC-PEL1"]
+# la escaleta tambien se puede cambiar con la parrilla publicada
+ana.rojas@gmail.com | insLea["2032-03-02","20:00","3","ESC-N3"]
+ana.rojas@gmail.com | lisLea["2032-03-02","20:00"]
+
+# --- el material de una escaleta publicada no se da de baja ni se cambia (error) ---
+ana.rojas@gmail.com | eliMat["ESC-N1"]
+
+# --- paso del tiempo: a las 01:00 el bloque de las 00:00 ya empezo ---
+@ahora 2032-03-02T01:00
+pedro.vaca@hotmail.com | camBlo["2032-03-02","00:00","ESC-PEL2"]
+# emision: el bloque de las 20:00 todavia no empezo (error)
+produccion.canal11@gmail.com | insEmi["2032-03-02","20:00","20:00:00","21:00:00","EMITIDO"]
+ana.rojas@gmail.com | insLea["2032-03-02","20:00","1","ESC-N1"]
+# a las 22:00 el noticiero ya salio al aire: se registra y la escaleta ya no se cambia
+@ahora 2032-03-02T22:00
+produccion.canal11@gmail.com | insEmi["2032-03-02","20:00","20:00:00","21:00:00","EMITIDO"]
+ana.rojas@gmail.com | modLea["2032-03-02","20:00","ESC-N3","1"]
+pedro.vaca@hotmail.com | camBlo["2032-03-02","21:00","ESC-PEL2"]
+larzekaobnc@gmail.com | lisAud["escaleta"]

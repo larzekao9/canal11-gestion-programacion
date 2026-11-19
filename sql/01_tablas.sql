@@ -123,3 +123,27 @@ CREATE TABLE IF NOT EXISTS auditoria (
 );
 
 CREATE INDEX IF NOT EXISTS idx_auditoria_entidad ON auditoria (entidad, id_entidad);
+
+-- Escaleta (orden de las notas dentro de un bloque de noticiero o revista). Es el "orden de transmision" que
+-- Prensa mandaba por WhatsApp (lead 1 / video 1, lead 2 / video 2...). El UNIQUE es DEFERRABLE para poder
+-- reordenar con un solo UPDATE.
+CREATE TABLE IF NOT EXISTS escaleta (
+    id_escaleta    SERIAL PRIMARY KEY,
+    id_bloque      INTEGER   NOT NULL REFERENCES bloque (id_bloque) ON DELETE CASCADE,
+    orden          INTEGER   NOT NULL CHECK (orden > 0),
+    id_material    INTEGER   NOT NULL REFERENCES material (id_material),
+    registrado_por INTEGER   NOT NULL REFERENCES usuario (id_usuario),
+    fecha_registro TIMESTAMP NOT NULL DEFAULT now(),
+    CONSTRAINT uq_escaleta_orden UNIQUE (id_bloque, orden) DEFERRABLE INITIALLY IMMEDIATE,
+    CONSTRAINT uq_escaleta_material UNIQUE (id_bloque, id_material)
+);
+
+CREATE INDEX IF NOT EXISTS idx_escaleta_material ON escaleta (id_material);
+
+-- Avisos automaticos ya enviados (recordatorios, alertas): evita repetir el mismo aviso en cada vuelta del hilo.
+CREATE TABLE IF NOT EXISTS aviso_enviado (
+    tipo   VARCHAR(30) NOT NULL,
+    clave  VARCHAR(80) NOT NULL,
+    fecha  TIMESTAMP   NOT NULL DEFAULT now(),
+    PRIMARY KEY (tipo, clave)
+);

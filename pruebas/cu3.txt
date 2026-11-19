@@ -8,6 +8,9 @@
 #   valMat["NOT-2011","APROBADO",""]   (ver pruebas\cu5.txt)
 
 # --- ayuda ---
+# Hora fija del sistema para que las fechas de prueba (2030/2031) sean futuras. La directiva @ahora la entiende --lote.
+@ahora 2029-01-01T10:00
+
 larzekaobnc@gmail.com | help["3"]
 
 # --- casos correctos ---
@@ -81,7 +84,8 @@ larzekaobnc@gmail.com | insPar["2030-12-01"]
 larzekaobnc@gmail.com | insBlo["2030-12-01","20:00","21:00","PROGRAMA","Prueba Bloque","PB-SPOT"]    # error: es un SPOT
 larzekaobnc@gmail.com | insBlo["2030-12-01","21:00","22:00","PROGRAMA","Prueba Bloque","PB-LARGO"]   # 2 errores: otro programa y no cabe
 larzekaobnc@gmail.com | insBlo["2030-12-01","22:00","23:00","PROGRAMA","Prueba Bloque","PB-NOT"]     # ok
-larzekaobnc@gmail.com | valMat["PB-NOT","APROBADO","ok"]
+# lo aprueba Prensa: quien registra (el admin) no valida lo suyo
+ana.rojas@gmail.com | valMat["PB-NOT","APROBADO","ok"]
 larzekaobnc@gmail.com | pubPar["2030-12-01"]
 larzekaobnc@gmail.com | modMat["PB-NOT","Noticiero prueba","PROGRAMA","Prueba Bloque","3500","MP4","/pb/not.mp4"]        # error: duracion de material publicado
 larzekaobnc@gmail.com | modMat["PB-NOT","Noticiero prueba","PROGRAMA","Prueba Bloque","3600","MP4","/pb/otra.mp4"]      # error: ruta de material publicado

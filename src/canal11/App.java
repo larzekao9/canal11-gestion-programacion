@@ -9,6 +9,9 @@ import canal11.config.Registro;
 import canal11.datos.Instalador;
 import canal11.presentacion.Despachador;
 import canal11.presentacion.Interprete;
+import canal11.presentacion.Notificador;
+import canal11.presentacion.PAlertas;
+import canal11.presentacion.PRecordatorio;
 import canal11.presentacion.Respuesta;
 
 import java.io.IOException;
@@ -73,7 +76,45 @@ public class App {
                 Config.get("mail.usuario"), Config.get("mail.password"), intervalo, this::alRecibirCorreos);
         Thread t = new Thread(hilo, "Hilo de verificacion de correo");
         t.start();
+        Notificador.activar(smtp);
+        iniciarRecordatorios();
         t.join(); // el programa sigue vivo mientras el hilo trabaja
+    }
+
+    /**
+     * Hilo aparte (daemon) que cada revision.intervalo segundos revisa: el plazo de los materiales PENDIENTES
+     * (recordatorio / escalamiento), las parrillas en riesgo, las emisiones sin registrar y los rechazos sin corregir.
+     * Es independiente del buzon: si POP3 falla, los avisos siguen.
+     */
+    private void iniciarRecordatorios() {
+        int cada = Math.max(5, Config.getInt("revision.intervalo"));
+        System.out.println("  Avisos por correo: " + (Notificador.activo() ? "activos" : "desactivados")
+                + " (parrilla publicada o cambiada, material validado, orden del noticiero).");
+        System.out.println("  Recordatorio de revision: " + (Config.getInt("revision.minutos_aviso") > 0
+                ? "aviso a los " + Config.getInt("revision.minutos_aviso") + " min, escalamiento a los "
+                + Config.getInt("revision.minutos_escalar") + " min, entre " + Config.get("revision.hora_desde") + " y "
+                + Config.get("revision.hora_hasta") : "desactivado") + ".");
+        System.out.println("  Alertas: parrilla en riesgo " + Config.get("alerta.parrilla_horas") + " h antes, emision sin registrar a los "
+                + Config.get("alerta.emision_minutos") + " min (se revisa todo cada " + cada + " s).");
+        PRecordatorio recordatorio = new PRecordatorio(smtp);
+        PAlertas alertas = new PAlertas(smtp);
+        Thread hilo = new Thread(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    recordatorio.revisar();
+                    alertas.revisar();
+                } catch (RuntimeException e) {
+                    Registro.errorSistema("Avisos automaticos - error inesperado", e);
+                }
+                try {
+                    Thread.sleep(cada * 1000L);
+                } catch (InterruptedException e) {
+                    return;
+                }
+            }
+        }, "Hilo de avisos automaticos");
+        hilo.setDaemon(true);
+        hilo.start();
     }
 
     /** Oyente del HiloCorreo: decide cuales responder, procesa cada comando y envia la respuesta. */
@@ -142,6 +183,7 @@ public class App {
     /**
      * --lote pruebas/cu1.txt: ejecuta cada linea "remitente | asunto" del archivo (sin correo)
      * y guarda cada respuesta en salida/01.html, salida/02.html, ... Las lineas con # son comentarios.
+     * La linea "@ahora AAAA-MM-DDTHH:MM" fija la hora del sistema desde ahi (para probar fechas y emisiones sin esperar).
      */
     private void probarLote(String[] args) throws IOException {
         if (args.length < 2) {
@@ -152,6 +194,10 @@ public class App {
         Files.createDirectories(carpeta);
         int n = 0;
         for (String linea : Files.readAllLines(Path.of(args[1]), StandardCharsets.UTF_8)) {
+            if (linea.trim().startsWith("@ahora")) { // @ahora 2031-05-10T18:00  fija la hora del sistema (vacio = hora real)
+                Config.fijar("app.ahora", linea.trim().substring("@ahora".length()).trim());
+                continue;
+            }
             if (linea.isBlank() || linea.trim().startsWith("#") || !linea.contains("|")) {
                 continue;
             }

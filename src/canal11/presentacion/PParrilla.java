@@ -1,6 +1,9 @@
 package canal11.presentacion;
 
+import canal11.negocio.NAviso;
+import canal11.negocio.NLead;
 import canal11.negocio.NParrilla;
+import canal11.negocio.Rol;
 import canal11.negocio.Usuario;
 
 import java.util.ArrayList;
@@ -16,6 +19,8 @@ public class PParrilla {
     private static final String[] COLUMNAS = {"ID", "Fecha", "Estado", "Creada por", "Fecha de creación", "Fecha de publicación", "Bloques"};
 
     private final NParrilla negocio = new NParrilla();
+    private final NAviso avisos = new NAviso();
+    private final NLead escaletas = new NLead();
 
     /** lisPar["*"] | lisPar["2026-11"] */
     public Respuesta listar(Usuario u, List<String> p) throws Exception {
@@ -78,14 +83,36 @@ public class PParrilla {
 
     /** pubPar["fecha"] */
     public Respuesta publicar(Usuario u, List<String> p) throws Exception {
-        List<String> avisos = negocio.publicar(u, p.get(0));
+        List<String> avisosDePublicacion = negocio.publicar(u, p.get(0));
         String[] f = negocio.mostrar(p.get(0));
         String html = Html.exito("La parrilla del <b>" + f[1] + "</b> fue <b>PUBLICADA</b>. "
                 + "Es ahora la única fuente del orden de transmisión.");
-        if (!avisos.isEmpty()) {
-            html += Html.info("<b>Avisos</b> (no impidieron publicar):" + Html.lista(escapar(avisos)));
+        if (!avisosDePublicacion.isEmpty()) {
+            html += Html.info("<b>Avisos</b> (no impidieron publicar):" + Html.lista(escapar(avisosDePublicacion)));
+        }
+        if (Notificador.activo()) {
+            // El orden de transmision llega solo a Produccion y Prensa: ya no hace falta mandarlo por WhatsApp.
+            Notificador.enviar(avisos.emailsDeRoles(u.getEmail(), Rol.PRODUCCION, Rol.ENCARGADO), "Parrilla publicada: " + f[1],
+                    Html.parrafo(Html.esc(u.getNombre()) + " publicó la parrilla del <b>" + f[1] + "</b>. Es la <b>única fuente</b> del orden "
+                            + "de transmisión: si cambia, recibirá un nuevo aviso.") + correo(p.get(0), avisosDePublicacion));
         }
         return new Respuesta("Parrilla publicada", html + vista(f, p.get(0)));
+    }
+
+    /** camBlo["fecha","hora_inicio","material"] */
+    public Respuesta cambiarMaterial(Usuario u, List<String> p) throws Exception {
+        String[] r = negocio.cambiarMaterialBloque(u, p); // {anterior, nuevo, estado parrilla, programa, inicio, fin}
+        String[] f = negocio.mostrar(p.get(0));
+        String cambio = "El bloque de <b>" + Html.esc(r[3]) + "</b> (" + Html.esc(hora(r[4]) + " - " + hora(r[5])) + ") pasó del material <b>"
+                + Html.esc(r[0]) + "</b> a <b>" + Html.esc(r[1]) + "</b>.";
+        if (Notificador.activo() && "PUBLICADA".equals(r[2])) {
+            Notificador.enviar(avisos.emailsDeRoles(u.getEmail(), Rol.PRODUCCION, Rol.ENCARGADO),
+                    "Cambio en la parrilla del " + f[1],
+                    Html.parrafo(Html.esc(u.getNombre()) + " (" + Html.esc(u.getRol().getNombre()) + ") hizo un cambio en la parrilla publicada del <b>"
+                            + f[1] + "</b>.") + Html.info(cambio + " Este es el material que debe salir al aire.") + correo(p.get(0), List.of()));
+        }
+        String aviso = "PUBLICADA".equals(r[2]) ? Html.info("La parrilla ya está publicada: se avisó del cambio a Producción y Prensa.") : "";
+        return new Respuesta("Material del bloque cambiado", Html.exito(cambio) + aviso + vista(f, p.get(0)));
     }
 
     // ------------------------------------------------------------------ vista comun
@@ -98,8 +125,10 @@ public class PParrilla {
 
         List<String[]> tabla = new ArrayList<>();
         for (String[] b : bloques) {
-            String material = b[5].isEmpty() ? ("PROGRAMA".equals(b[3]) ? "SIN MATERIAL" : "") : b[5];
-            String estado = b[5].isEmpty() ? "" : ("No".equals(b[7]) ? b[6] + " (material de baja)" : b[6]);
+            int notas = Integer.parseInt(b[9]);
+            String material = notas > 0 ? "ESCALETA (" + notas + " nota" + (notas == 1 ? "" : "s") + ")"
+                    : (b[5].isEmpty() ? ("PROGRAMA".equals(b[3]) ? "SIN MATERIAL" : "") : b[5]);
+            String estado = notas > 0 ? "" : (b[5].isEmpty() ? "" : ("No".equals(b[7]) ? b[6] + " (material de baja)" : b[6]));
             tabla.add(new String[]{
                     Html.esc(hora(b[1]) + " - " + hora(b[2])),
                     Html.esc(b[3]),
@@ -127,12 +156,38 @@ public class PParrilla {
         } else {
             sb.append(Html.subtitulo("Siguientes pasos"));
             sb.append(Html.parrafo("Estado de emisión: " + Html.codigo("estPar[\"" + fecha + "\"]")));
+            sb.append(Html.parrafo("Cambiar el material de un bloque que aún no empieza: "
+                    + Html.codigo("camBlo[\"" + fecha + "\",\"HH:MM\",\"CODIGO\"]")));
         }
         return sb.toString();
     }
 
+    /** Cuerpo del correo de la parrilla: bloques en orden, con la escaleta de los noticieros. Los avisos de publicacion van al final. */
+    private String correo(String fechaTxt, List<String> avisosDePublicacion) throws Exception {
+        List<String[]> bloques = negocio.bloques(fechaTxt);
+        List<String[]> tabla = new ArrayList<>();
+        StringBuilder escaleta = new StringBuilder();
+        for (String[] b : bloques) {
+            int notas = Integer.parseInt(b[9]);
+            tabla.add(new String[]{Html.esc(hora(b[1]) + " - " + hora(b[2])), Html.esc(b[3]), Html.esc(b[4]),
+                    Html.esc(notas > 0 ? "ESCALETA (" + notas + ")" : b[5])});
+            if (notas > 0) {
+                escaleta.append(Html.subtitulo("Escaleta de " + b[4] + " (" + hora(b[1]) + ")"))
+                        .append(PLead.tabla(escaletas.listar(fechaTxt, b[1])));
+            }
+        }
+        String html = Html.tablaHtml(new String[]{"Horario", "Tipo", "Programa", "Material"}, tabla) + escaleta;
+        if (!avisosDePublicacion.isEmpty()) {
+            html += Html.info("<b>Avisos:</b>" + Html.lista(escapar(avisosDePublicacion)));
+        }
+        return html;
+    }
+
     /** "20:00:00" -> "20:00"; "20:00:30" se deja igual. */
     private static String hora(String h) {
+        if (h.equals("23:59:59")) {
+            return "24:00"; // fin del dia
+        }
         return h.endsWith(":00") && h.length() == 8 ? h.substring(0, 5) : h;
     }
 

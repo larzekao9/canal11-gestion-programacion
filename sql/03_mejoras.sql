@@ -112,14 +112,27 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM bloque WHERE id_parrilla = NEW.id_parrilla) THEN
             RAISE EXCEPTION 'No se puede publicar una parrilla sin bloques.';
         END IF;
+        -- Bloque PROGRAMA sin escaleta: necesita su propio material activo y APROBADO.
         SELECT b.hora_inicio, m.codigo, m.estado, m.activo INTO malo
         FROM bloque b LEFT JOIN material m ON m.id_material = b.id_material
         WHERE b.id_parrilla = NEW.id_parrilla AND b.tipo = 'PROGRAMA'
+          AND NOT EXISTS (SELECT 1 FROM escaleta e WHERE e.id_bloque = b.id_bloque)
           AND (m.id_material IS NULL OR m.estado <> 'APROBADO' OR NOT m.activo)
         ORDER BY b.hora_inicio LIMIT 1;
         IF FOUND THEN
             RAISE EXCEPTION 'El bloque de las % no tiene un material activo y APROBADO (material: %, estado: %).',
                 malo.hora_inicio, coalesce(malo.codigo, 'sin asignar'), coalesce(malo.estado, '-');
+        END IF;
+        -- Bloque con escaleta: todas sus notas deben estar activas y APROBADAS.
+        SELECT b.hora_inicio, m.codigo, m.estado, m.activo INTO malo
+        FROM escaleta e
+        JOIN bloque b ON b.id_bloque = e.id_bloque
+        JOIN material m ON m.id_material = e.id_material
+        WHERE b.id_parrilla = NEW.id_parrilla AND (m.estado <> 'APROBADO' OR NOT m.activo)
+        ORDER BY b.hora_inicio, e.orden LIMIT 1;
+        IF FOUND THEN
+            RAISE EXCEPTION 'La escaleta del bloque de las % usa el material % (estado: %), que no esta activo y APROBADO.',
+                malo.hora_inicio, malo.codigo, malo.estado;
         END IF;
     END IF;
     RETURN NEW;
@@ -184,3 +197,14 @@ CREATE TRIGGER trg_auditoria_sin_truncate
 ALTER TABLE usuario DROP CONSTRAINT IF EXISTS usuario_rol_check;
 ALTER TABLE usuario ADD CONSTRAINT usuario_rol_check
     CHECK (rol IN ('ADMINISTRADOR', 'PROGRAMADOR', 'ENCARGADO', 'PRODUCCION'));
+
+-- 14) Plazo de revision de materiales: si Prensa no valida (PENDIENTE) a tiempo, el sistema avisa por correo
+--     (avisos = 1, a los ENCARGADO) y luego escala (avisos = 2, a los ADMINISTRADOR). Los plazos se
+--     configuran en config.properties. pendiente_desde se reinicia cuando modMat devuelve el material a PENDIENTE.
+ALTER TABLE material ADD COLUMN IF NOT EXISTS pendiente_desde TIMESTAMP NOT NULL DEFAULT now();
+ALTER TABLE material ADD COLUMN IF NOT EXISTS ultimo_aviso TIMESTAMP;
+ALTER TABLE material ADD COLUMN IF NOT EXISTS avisos INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE material DROP CONSTRAINT IF EXISTS ck_material_avisos;
+ALTER TABLE material ADD CONSTRAINT ck_material_avisos CHECK (avisos BETWEEN 0 AND 2);
+
+CREATE INDEX IF NOT EXISTS idx_material_pendiente ON material (pendiente_desde) WHERE estado = 'PENDIENTE';

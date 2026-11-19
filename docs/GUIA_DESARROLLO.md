@@ -10,7 +10,7 @@ Esta guía es para quien continúe el proyecto. Explica **qué ya está hecho**,
 
 | Fase | Qué incluye | Estado |
 |---|---|---|
-| 0 | Sockets POP3/SMTP, **hilo** de verificación de correo con oyente, intérprete del asunto, plantilla HTML, `help`, catálogo de los 39 comandos, tablas | ✅ Terminado |
+| 0 | Sockets POP3/SMTP, **hilo** de verificación de correo con oyente, intérprete del asunto, plantilla HTML, `help`, catálogo de los 44 comandos, tablas | ✅ Terminado |
 | 1 | **CU1 Gestión de Usuarios** (`lisUsu`, `mosUsu`, `insUsu`, `modUsu`, `eliUsu`, `actUsu`) + **auditoría** automática + validador con todos los errores juntos + correos de cualquier proveedor + asuntos con `RE:`/`Fwd:` + sugerencia de comando parecido | ✅ Terminado y probado (BD y servidor de correo de prueba). **Pendiente:** probar en el servidor del curso desde la facultad |
 | 2 | CU2 Programas + CU4 Materiales (`DPrograma/NPrograma/PPrograma`, `DMaterial/NMaterial/PMaterial`) | ✅ Compila. **Pendiente:** correr `pruebas/cu2.txt` y `pruebas/cu4.txt` contra la BD |
 | 3 | CU3 Parrilla y bloques (`DParrilla/DBloque/NParrilla/PParrilla`) | ✅ Compila. **Pendiente:** correr `pruebas/cu3.txt` contra la BD |
@@ -21,7 +21,7 @@ Esta guía es para quien continúe el proyecto. Explica **qué ya está hecho**,
 | 8 | Logs `access.log` / `error.log` | ✅ |
 | 9 | **Endurecer la BD** (`sql/03_mejoras.sql`: CHECK de bloque, exclusión de solapes, trigger de spots, email único sin mayúsculas, índices FK) y **rol `PRODUCCION`** | ✅ Probado en PostgreSQL 16 local: `--instalar` dos veces, lotes `cu1`–`cu8` y `pruebas/bd_restricciones.sql` |
 
-**Los 39 comandos de los 8 casos de uso ya están implementados** (ninguno dice "en desarrollo"). Lo que falta es **probar todo contra la BD y el servidor de correo del curso**: correr, en este orden, `pruebas/cu1.txt`, `cu2`, `cu4`, `cu5`, `cu3`, `cu6`, `cu7` y `cu8`, y revisar los HTML de `salida/`.
+**Los 44 comandos de los 8 casos de uso ya están implementados** (los 5 últimos son `camBlo`, `lisLea`, `insLea`, `modLea` y `eliLea`; ver el README, sección «Avisos automáticos y reglas del flujo») (ninguno dice "en desarrollo"). Lo que falta es **probar todo contra la BD y el servidor de correo del curso**: correr, en este orden, `pruebas/cu1.txt`, `cu2`, `cu4`, `cu5`, `cu3`, `cu6`, `cu7`, `cu8` y `cu9` (cada archivo fija la hora con `@ahora`), y revisar los HTML de `salida/`.
 
 ---
 

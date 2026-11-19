@@ -382,9 +382,16 @@ Qué información maneja cada área, de dónde viene y a dónde va. Es la base p
 
 | # | Problema del levantamiento | Decisión de diseño | Cómo está implementado |
 |---|---|---|---|
-| 1 | Comunicación deficiente | Un **sistema común** al que todas las áreas acceden por correo | 39 comandos en 8 CU; el mismo dato lo ven todos según su rol |
+| 1 | Comunicación deficiente | Un **sistema común** al que todas las áreas acceden por correo, que además **avisa solo** | 44 comandos en 8 CU; el mismo dato lo ven todos según su rol; avisos por correo al publicar o cambiar la parrilla, al validar un material y por vencimiento de plazos (ver filas siguientes) |
 | 2 | Archivos duplicados | **Identificador único** por material | `material.codigo` único y `material.ruta` única; `insMat` rechaza el duplicado e informa el código ya existente |
 | 3 | WhatsApp = doble fuente | La **parrilla publicada** es la única fuente del orden | `pubPar` pasa la parrilla a PUBLICADA (`fecha_publicacion`); solo se publica si no está vacía y sus materiales están APROBADOS |
+| 3 | WhatsApp era inmediato; el sistema solo respondía | El sistema **empuja** el orden: aviso por correo al publicar y ante cada cambio | `pubPar` envía la parrilla a Producción y Prensa; `camBlo` cambia el material de un bloque aún no iniciado (también con la parrilla publicada) y avisa; los cambios de último momento ya no necesitan WhatsApp |
+| 3 | El orden de las notas del noticiero ("lead 1 / video 1") viajaba por WhatsApp | **Escaleta** por bloque de noticiero | tabla `escaleta` y comandos `lisLea` / `insLea` / `modLea` / `eliLea`; `lisLea` da la hora estimada de cada nota (pregunta 4 de la sección 15); el cambio se avisa a Producción y Programación |
+| 5 | Programación y Prensa no se enteran de lo que hace el otro | Avisos cruzados | el resultado de `valMat` llega a quien registró el material; la parrilla en riesgo (sin publicar, con materiales sin aprobar) avisa a Programación y a Prensa |
+| — | Aprobación del jefe de Prensa informal y sin plazo | Plazo de revisión con recordatorio y escalamiento | `material.pendiente_desde`; a `revision.minutos_aviso` recordatorio a Prensa, a `revision.minutos_escalar` aviso al administrador; nunca aprueba por tiempo; solo en horario hábil; `lisMat["VENCIDO"]` |
+| — | La aprobación debe ser un control real | Quien registra no valida | `valMat` rechaza que el mismo usuario apruebe lo que registró |
+| — | No se sabe qué se emitió (y nadie lo recuerda) | Alerta de emisión sin registrar | un bloque terminado sin `insEmi` avisa a Producción; `insEmi` solo acepta bloques que ya empezaron |
+| — | Canal 24/7 | Cobertura del día completo | `hora_fin` acepta 24:00; `pubPar` avisa huecos al inicio y al final y el % de cobertura; no se crean ni publican parrillas pasadas |
 | 3 | (idem) | Impedir órdenes imposibles | `ex_bloque_sin_solape` (exclusión de rangos horarios en la BD) + validación en `NParrilla` |
 | 4 | Red saturada | **No es alcance del software** (ver sección 14) | Mitigación indirecta: el correo es liviano y no mueve los videos; solo se registran códigos y rutas |
 | 5 | Programación aislada de Prensa | Ambos operan sobre la **misma parrilla** | `parrilla`/`bloque` compartidos; `lisPar`/`mosPar`/`estPar` los ve todo rol |
@@ -404,7 +411,8 @@ Cómo cambia el flujo de la sección 6:
 | Entrega de la nota | Video + 2 txt al servidor, y orden por WhatsApp | El material se registra con `insMat` (código y ruta únicos) y queda en PENDIENTE |
 | Aprobación | Informal, dentro de Prensa | `valMat` → APROBADO o RECHAZADO con responsable y fecha |
 | Orden de transmisión | En un txt y en WhatsApp | **Parrilla del día** en BORRADOR → `pubPar` → PUBLICADA (**única fuente**) |
-| Verificación previa | Ninguna | `estPar`: por bloque LISTO / PENDIENTE / RECHAZADO / SIN MATERIAL |
+| Verificación previa | Ninguna | `estPar`: por bloque LISTO / PENDIENTE / RECHAZADO / SIN MATERIAL; alerta automática de parrilla en riesgo |
+| Avisos | WhatsApp, a mano | Correo automático: parrilla publicada y cambios, orden del noticiero, resultado de la validación, recordatorios |
 | Publicidad | Programación la inserta | `insPau` + `insSpo` con validaciones de vigencia, pausa y máximo de pases |
 | Emisión | No se registra | Producción registra con `insEmi` lo realmente emitido |
 | Control | No existe | `conPar` compara programado vs emitido; `repCum` da % de cumplimiento diario |

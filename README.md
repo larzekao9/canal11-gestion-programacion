@@ -69,11 +69,47 @@ Las restricciones que la imagen marca como *(propuesto)* **ya están aplicadas e
 | `pauta` | Contrato publicitario de un anunciante con vigencia y máximo de pases | `nombre` único; `fecha_fin >= fecha_inicio` |
 | `spot` | Aviso ubicado en una pausa comercial | un spot por (`bloque`, `hora`); trigger `fn_validar_spot`: bloque PAUSA_COMERCIAL, hora dentro de la pausa, material SPOT aprobado; trigger `fn_validar_spot_pauta`: la fecha dentro de la vigencia de la pauta y sin superar `max_pases` (los NO_EMITIDO no cuentan) |
 | `emision` | Lo realmente emitido de cada bloque (EMITIDO, PARCIAL, NO_EMITIDO) | una por bloque; `ck_emision_fin` (`fin_real` posterior a `inicio_real`) |
+| `escaleta` | Orden de las notas de un bloque de noticiero o revista (lead 1, lead 2...) | `UNIQUE (id_bloque, orden)` diferible (se reordena con un solo UPDATE) y `UNIQUE (id_bloque, id_material)`; se borra con su bloque |
+| `aviso_enviado` | Avisos automáticos ya enviados (recordatorios y alertas) para no repetirlos | PK (`tipo`, `clave`) |
 | `auditoria` | Historial de cada cambio: quién, qué, cuándo y con qué comando | solo inserción: el trigger `fn_auditoria_inmutable` rechaza UPDATE, DELETE y TRUNCATE (no frena a quien administre la BD; para eso hay que quitar esos permisos al rol de la aplicación); índice por (`entidad`, `id_entidad`); la FK a `usuario` **no** lleva `ON DELETE SET NULL`: los usuarios solo se dan de baja lógica y SET NULL borraría en silencio quién hizo cada cambio |
 
 Scripts: [`sql/01_tablas.sql`](sql/01_tablas.sql) (tablas), `02_datos.sql` (administrador inicial) y [`sql/03_mejoras.sql`](sql/03_mejoras.sql) (restricciones, triggers, índices, `material.descripcion` y rol PRODUCCION). `--instalar` los ejecuta en orden y es repetible; antes de `03` revisa que los datos existentes no violen las restricciones (solapes, tipo de bloque, correos repetidos, materiales rechazados sin observación o validados sin responsable, emisiones con fin anterior al inicio). Si el servidor no deja crear la extensión `btree_gist`, avisa y sigue (el solape queda validado solo en `NParrilla`).
 
+**Plazo de revisión:** `material.pendiente_desde`, `ultimo_aviso` y `avisos` (0-2) llevan el recordatorio y el escalamiento (`ck_material_avisos`).
+
 **Roles y áreas del canal:** Prensa → `ENCARGADO` · Programación → `PROGRAMADOR` (arma la parrilla, pautas y spots, y registra sus propios materiales con `insMat`/`modMat`/`eliMat`; no los aprueba) · Producción → `PRODUCCION` (consulta todo y registra la emisión real con `insEmi`) · dirección/sistemas → `ADMINISTRADOR`.
+
+## Avisos automáticos y reglas del flujo
+
+El sistema ya no solo contesta cuando le preguntan: **avisa solo**. Es lo que el levantamiento pedía para dejar de depender de WhatsApp
+(el orden iba por WhatsApp porque es inmediato; ahora el correo también lo es). Los avisos se envían con el servidor corriendo
+(no en `--probar` ni `--lote`) y cada uno queda en la auditoría o en `access.log`.
+
+| Aviso | Cuándo | A quién |
+|---|---|---|
+| Parrilla publicada | al ejecutar `pubPar` | Producción y Prensa (orden del día, con la escaleta del noticiero) |
+| Cambio en la parrilla | `camBlo` sobre una parrilla publicada | Producción y Prensa |
+| Cambio en el orden del noticiero | `insLea`/`modLea`/`eliLea` con la parrilla publicada | Producción y Programación |
+| Material aprobado o rechazado | al ejecutar `valMat` | quien registró el material |
+| **Recordatorio** de revisión | material PENDIENTE más de `revision.minutos_aviso` | `ENCARGADO` (Prensa) |
+| **Escalamiento** | sigue PENDIENTE pasados `revision.minutos_escalar` | `ADMINISTRADOR` |
+| Material rechazado sin corregir | `revision.correccion_minutos` después del rechazo | quien lo registró |
+| Parrilla en riesgo | `alerta.parrilla_horas` antes del día: sin crear, en borrador o con materiales sin aprobar | Programación (y Prensa si hay pendientes); a `alerta.parrilla_urgente_horas` también al administrador |
+| Emisión sin registrar | un bloque terminó hace más de `alerta.emision_minutos` sin `insEmi` | Producción |
+
+Los recordatorios de revisión (y de rechazos) solo salen entre `revision.hora_desde` y `revision.hora_hasta`. Nunca se aprueba ni se rechaza por
+tiempo: solo se avisa. Los avisos automáticos se marcan en `aviso_enviado` para no repetirse. Para una demostración en vivo, poner
+`revision.minutos_aviso=2`, `revision.minutos_escalar=4` y `revision.intervalo=10` en `config.properties`.
+
+**Reglas nuevas del flujo**
+
+- **Escaleta del noticiero** (`lisLea`, `insLea`, `modLea`, `eliLea`): el orden de las notas ("lead 1 / video 1") dentro de un bloque de un programa NOTICIERO o REVISTA.
+  `lisLea` da la hora estimada de entrada de cada nota. Se cambia hasta que el bloque empieza, incluso con la parrilla publicada. Un bloque con escaleta no necesita material propio.
+- **`camBlo`**: cambia el material de un bloque (aun con la parrilla publicada) mientras no haya empezado; el material debe estar APROBADO.
+- **Quien registra no valida:** `valMat` rechaza que el mismo usuario apruebe lo que registró.
+- **Fechas contra hoy** (`app.zona`, por defecto America/La_Paz): no se crean ni publican parrillas pasadas y `insEmi` solo acepta lo que ya empezó. Para pruebas, `app.ahora` fija la hora y en `--lote` la línea `@ahora AAAA-MM-DDTHH:MM`.
+- **Canal 24/7:** `hora_fin` acepta `24:00` (se guarda como 23:59:59) y `pubPar` avisa los huecos al inicio y al final del día y la cobertura. Una película que cruza la medianoche se parte en dos parrillas.
+- **Materiales:** la extensión de la `ruta` debe coincidir con el `formato`, y `insMat`/`modMat` advierten un posible duplicado (mismo título, tipo y duración). `lisMat["VENCIDO"]` lista los pendientes que ya recibieron aviso.
 
 ## Seguridad y registro
 
@@ -113,6 +149,17 @@ Herramientas de prueba:
 
 > El servidor SMTP del curso solo reenvía a correos externos (Gmail) desde la red de la facultad.
 
+### Probar con una base local (rápido)
+
+Contra la base del curso cada comando tarda varios segundos; en local toda la batería (`cu1` a `cu9`) corre en unos 7 s:
+
+```bash
+createdb canal11_local && psql canal11_local -c "CREATE EXTENSION btree_gist"
+# en config.properties: db.host=localhost, db.nombre=canal11_local, db.usuario=<su usuario>, db.password=
+./ejecutar.sh --instalar
+for n in 1 2 4 5 3 6 7 8 9; do ./ejecutar.sh --lote pruebas/cu$n.txt; done
+```
+
 ## Uso
 
 Formato del asunto: `comando["parametro1","parametro2",...]`
@@ -137,7 +184,7 @@ material por código, parrilla por fecha, bloque por fecha + hora, pauta por nom
 |---|---|
 | CU1 Gestión de Usuarios | `lisUsu` `mosUsu` `insUsu` `modUsu` `eliUsu` `actUsu` |
 | CU2 Catálogo de Programas | `lisPro` `mosPro` `insPro` `modPro` `eliPro` |
-| CU3 Confeccionar y Controlar la Parrilla | `lisPar` `mosPar` `insPar` `eliPar` `insBlo` `eliBlo` `pubPar` |
+| CU3 Confeccionar y Controlar la Parrilla | `lisPar` `mosPar` `insPar` `eliPar` `insBlo` `eliBlo` `camBlo` `pubPar` `lisLea` `insLea` `modLea` `eliLea` |
 | CU4 Materiales de Video | `lisMat` `mosMat` `insMat` `modMat` `eliMat` |
 | CU5 Validar Estado de Emisión | `valMat` `estPar` |
 | CU6 Pauta Publicitaria e Insertar Spots | `lisPau` `mosPau` `insPau` `eliPau` `insSpo` `eliSpo` |

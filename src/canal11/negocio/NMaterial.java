@@ -37,6 +37,9 @@ public class NMaterial {
             return datos.listar(null, null, null);
         }
         String mayus = f.toUpperCase();
+        if (mayus.equals("VENCIDO")) { // pendientes que ya recibieron aviso por falta de revision
+            return datos.listarVencidos();
+        }
         for (String e : ESTADOS) {
             if (e.equals(mayus)) {
                 return datos.listar(e, null, null);
@@ -74,6 +77,7 @@ public class NMaterial {
             v.error("Ya existe un material con el código <b>" + Validador.esc(codigo) + "</b>.");
         }
         validarRuta(v, ruta, 0);
+        validarExtension(v, ruta, formato);
         Integer idPrograma = resolverPrograma(v, programa);
         v.verificar();
 
@@ -99,6 +103,7 @@ public class NMaterial {
         v.verificar();
 
         validarRuta(v, ruta, id);
+        validarExtension(v, ruta, formato);
         Integer idPrograma = resolverPrograma(v, programa);
         v.verificar();
 
@@ -155,6 +160,23 @@ public class NMaterial {
                     + "Consulte los materiales con lisMat[\"*\"].");
         }
         return id;
+    }
+
+    /** El archivo debe corresponder al formato declarado: la ruta termina en .mp4, .mov o .mxf segun el formato. */
+    private void validarExtension(Validador v, String ruta, String formato) {
+        if (ruta != null && formato != null && !ruta.toLowerCase().endsWith("." + formato.toLowerCase())) {
+            v.error("La ruta <b>" + Validador.esc(ruta) + "</b> debe terminar en <b>." + formato.toLowerCase()
+                    + "</b>: el archivo y el formato (" + formato + ") deben coincidir.");
+        }
+    }
+
+    /**
+     * Posibles duplicados de un material: otros materiales activos con el mismo titulo, tipo y duracion.
+     * No bloquea (puede ser una version distinta): solo advierte para que se revise con mosMat.
+     */
+    public List<String> posiblesDuplicados(int id) throws SQLException {
+        String[] m = datos.obtener(id);
+        return datos.buscarSimilares(m[2], m[3], Integer.parseInt(m[5]), id);
     }
 
     /** La ruta no puede estar usada por otro material: se informa cual la usa. */

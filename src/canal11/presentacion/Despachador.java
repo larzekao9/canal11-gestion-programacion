@@ -37,6 +37,8 @@ public class Despachador {
     // la aprobación (valMat) sigue siendo de ENCARGADO: quien registra no se aprueba a sí mismo.
     private static final Set<Rol> ADM_ENC_PRO = EnumSet.of(Rol.ADMINISTRADOR, Rol.ENCARGADO, Rol.PROGRAMADOR);
     // Producción saca la señal al aire: además de consultar, registra la emisión real (insEmi)
+    // El orden del noticiero (escaleta) es de Prensa
+    private static final Set<Rol> ADM_ENC_ESC = EnumSet.of(Rol.ADMINISTRADOR, Rol.ENCARGADO);
     private static final Set<Rol> ADM_PRO_PROD = EnumSet.of(Rol.ADMINISTRADOR, Rol.PROGRAMADOR, Rol.PRODUCCION);
 
     private final List<CasoUso> casosUso = new ArrayList<>();
@@ -58,6 +60,7 @@ public class Despachador {
         PPrograma programa = new PPrograma();
         PMaterial material = new PMaterial();
         PParrilla parrilla = new PParrilla();
+        PLead lead = new PLead();
         PValidacion validacion = new PValidacion();
         PPauta pauta = new PPauta();
         PEmision emision = new PEmision();
@@ -106,12 +109,25 @@ public class Despachador {
                 p("fecha", "hora_inicio", "hora_fin", "tipo", "programa (nombre)", "material (código)"),
                 "insBlo[\"2026-11-20\",\"20:00\",\"21:00\",\"PROGRAMA\",\"Noticiero Central\",\"NOT-2011\"]", ADM_PRO, parrilla::insertarBloque);
         cmd(3, "eliBlo", "Quita un bloque de la parrilla", p("fecha", "hora_inicio"), "eliBlo[\"2026-11-20\",\"20:00\"]", ADM_PRO, parrilla::eliminarBloque);
+        cmd(3, "camBlo", "Cambia el material de un bloque de programa, aun con la parrilla publicada, mientras el bloque no haya empezado. "
+                        + "Avisa a Producción y Prensa. El material debe estar APROBADO",
+                p("fecha", "hora_inicio", "material (código)"), "camBlo[\"2026-11-20\",\"20:00\",\"NOT-2012\"]", ADM_PRO, parrilla::cambiarMaterial);
+        cmd(3, "lisLea", "Muestra la escaleta (orden de las notas) de un bloque de noticiero o revista, con la hora estimada de cada nota",
+                p("fecha", "hora_bloque"), "lisLea[\"2026-11-20\",\"20:00\"]", TODOS, lead::listar);
+        cmd(3, "insLea", "Agrega una nota (material APROBADO) a la escaleta del bloque, en la posición indicada",
+                p("fecha", "hora_bloque", "orden", "material (código)"), "insLea[\"2026-11-20\",\"20:00\",\"1\",\"NOT-2011\"]",
+                ADM_ENC_ESC, lead::insertar);
+        cmd(3, "modLea", "Cambia el orden de una nota de la escaleta",
+                p("fecha", "hora_bloque", "material (código)", "nuevo_orden"), "modLea[\"2026-11-20\",\"20:00\",\"NOT-2011\",\"3\"]",
+                ADM_ENC_ESC, lead::mover);
+        cmd(3, "eliLea", "Quita una nota de la escaleta",
+                p("fecha", "hora_bloque", "material (código)"), "eliLea[\"2026-11-20\",\"20:00\",\"NOT-2011\"]", ADM_ENC_ESC, lead::eliminar);
         cmd(3, "pubPar", "Revisa la parrilla (solapes, huecos, materiales aprobados) y la publica",
                 p("fecha"), "pubPar[\"2026-11-20\"]", ADM_PRO, parrilla::publicar);
 
         // ------------------------------------------------------------------ CU4
         cu(4, "Gestión de Materiales de Video", "Registrar los videos (programas, spots, promos) con un código único y evitar duplicados.");
-        cmd(4, "lisMat", "Lista los materiales. Filtro: \"*\" = todos, un estado (PENDIENTE...) o un tipo (SPOT...)",
+        cmd(4, "lisMat", "Lista los materiales. Filtro: \"*\" = todos, un estado (PENDIENTE...), VENCIDO (pendientes con aviso por demora) o un tipo (SPOT...)",
                 p("filtro"), "lisMat[\"PENDIENTE\"]", TODOS, material::listar);
         cmd(4, "mosMat", "Muestra un material", p("material (código)"), "mosMat[\"NOT-2011\"]", TODOS, material::mostrar);
         cmd(4, "insMat", "Registra un material. Tipo: PROGRAMA, SPOT o PROMO. Programa puede ir vacío \"\" (spots)",

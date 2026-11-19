@@ -6,6 +6,9 @@
 # OJO: crea, modifica y da de baja materiales en la base configurada.
 
 # --- ayuda ---
+# Hora fija del sistema para que las fechas de prueba (2030/2031) sean futuras. La directiva @ahora la entiende --lote.
+@ahora 2029-01-01T10:00
+
 larzekaobnc@gmail.com | help["4"]
 
 # --- casos correctos ---
@@ -30,7 +33,7 @@ larzekaobnc@gmail.com | insMat["NOT-2013","Ruta repetida","SPOT","","30","MP4","
 larzekaobnc@gmail.com | insMat["NOT-2014","Muy largo","SPOT","","86401","MP4","/prensa/y.mp4"]
 larzekaobnc@gmail.com | mosMat["NO-EXISTE"]
 larzekaobnc@gmail.com | modMat["NO-EXISTE","t","SPOT","","30","MP4","/z.mp4"]
-larzekaobnc@gmail.com | modMat["SPOT-BSOL-01","Spot","SPOT","","30","MOV","/prensa/not_2011.mp4"]
+larzekaobnc@gmail.com | modMat["SPOT-BSOL-01","Spot","SPOT","","30","MP4","/prensa/not_2011.mp4"]
 
 # --- permisos (PROGRAMADOR registra sus propios materiales; la aprobacion es de ENCARGADO) ---
 # Cree antes un PROGRAMADOR, ej: insUsu["5555555","Pedro","Vaca","pedro.vaca@hotmail.com","","PROGRAMADOR"]

@@ -5,6 +5,9 @@
 # OJO: crea, modifica y da de baja programas en la base configurada.
 
 # --- ayuda ---
+# Hora fija del sistema para que las fechas de prueba (2030/2031) sean futuras. La directiva @ahora la entiende --lote.
+@ahora 2029-01-01T10:00
+
 larzekaobnc@gmail.com | help["2"]
 
 # --- casos correctos ---

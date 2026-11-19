@@ -7,6 +7,9 @@
 # OJO: crea pautas, parrillas, materiales y spots en la base configurada (fechas de 2031).
 
 # --- ayuda ---
+# Hora fija del sistema para que las fechas de prueba (2030/2031) sean futuras. La directiva @ahora la entiende --lote.
+@ahora 2029-01-01T10:00
+
 larzekaobnc@gmail.com | help["6"]
 
 # --- preparacion: una parrilla con un programa y una pausa de 2 minutos (120 s) ---

@@ -19,14 +19,16 @@ public class NAuditoria {
     public static final String REACTIVAR = "REACTIVAR";
     public static final String PUBLICAR = "PUBLICAR";
     public static final String VALIDAR = "VALIDAR";
+    public static final String RECORDAR = "RECORDAR";
+    public static final String ESCALAR = "ESCALAR";
 
     private final DAuditoria datos = new DAuditoria();
 
-    private static final String[] ENTIDADES = {"usuario", "programa", "material", "parrilla", "bloque", "pauta", "spot", "emision"};
+    private static final String[] ENTIDADES = {"usuario", "programa", "material", "parrilla", "bloque", "pauta", "spot", "emision", "escaleta"};
 
     /**
      * lisAud: historial de cambios (maximo DAuditoria.MAXIMO, mas recientes primero).
-     * filtro: "*" = todo; una entidad (usuario, programa, material, parrilla, bloque, pauta, spot, emision) o una fecha AAAA-MM-DD.
+     * filtro: "*" = todo; una entidad (usuario, programa, material, parrilla, bloque, pauta, spot, emision, escaleta) o una fecha AAAA-MM-DD.
      */
     public List<String[]> listar(String filtro) throws NegocioException, SQLException {
         Validador v = new Validador();
@@ -60,6 +62,15 @@ public class NAuditoria {
     public void registrar(Usuario usuario, String accion, String entidad, Integer idEntidad, String detalle, String comando) {
         try {
             datos.insertar(usuario.getId(), accion, entidad, idEntidad, detalle, comando);
+        } catch (Exception e) {
+            System.err.println("[Auditoria] No se pudo registrar " + accion + " " + entidad + " " + idEntidad + ": " + e.getMessage());
+        }
+    }
+
+    /** Accion automatica del sistema (sin usuario): en lisAud aparece como "(sistema)". */
+    public void registrarSistema(String accion, String entidad, Integer idEntidad, String detalle, String comando) {
+        try {
+            datos.insertar(null, accion, entidad, idEntidad, detalle, comando);
         } catch (Exception e) {
             System.err.println("[Auditoria] No se pudo registrar " + accion + " " + entidad + " " + idEntidad + ": " + e.getMessage());
         }
