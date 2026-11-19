@@ -1,6 +1,6 @@
 # Pruebas del CU8 - Reportes y Estadisticas
 # Formato de cada linea:   remitente | asunto
-# Ejecutar:  ejecutar.bat --lote pruebas\cu8.txt     (respuestas en salida\01.html, 02.html, ...)
+# Ejecutar:  scripts\ejecutar.bat --lote pruebas\cu8.txt     (respuestas en salida\01.html, 02.html, ...)
 # Requiere: --instalar y haber corrido TODAS las pruebas anteriores en orden: cu1, cu2, cu4, cu5, cu3, cu6 y cu7
 #           (los reportes leen sus datos: parrillas de 2030 y 2031, materiales, spots y emisiones).
 #           ana.rojas@gmail.com = ENCARGADO y pedro.vaca@hotmail.com = PROGRAMADOR.

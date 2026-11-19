@@ -1,6 +1,6 @@
 # Pruebas del CU6 - Pauta Publicitaria e Insertar Spots Comerciales
 # Formato de cada linea:   remitente | asunto
-# Ejecutar:  ejecutar.bat --lote pruebas\cu6.txt     (respuestas en salida\01.html, 02.html, ...)
+# Ejecutar:  scripts\ejecutar.bat --lote pruebas\cu6.txt     (respuestas en salida\01.html, 02.html, ...)
 # Requiere: --instalar y haber corrido pruebas\cu1.txt, cu2.txt, cu4.txt y cu5.txt
 #           (usa SPOT-BSOL-01 APROBADO de 30 s, NOT-2011 de tipo PROGRAMA, el programa "Noticiero Central",
 #            ana.rojas@gmail.com = ENCARGADO y pedro.vaca@hotmail.com = PROGRAMADOR).

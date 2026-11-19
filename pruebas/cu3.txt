@@ -1,6 +1,6 @@
 # Pruebas del CU3 - Confeccionar y Controlar la Parrilla
 # Formato de cada linea:   remitente | asunto
-# Ejecutar:  ejecutar.bat --lote pruebas\cu3.txt     (respuestas en salida\01.html, 02.html, ...)
+# Ejecutar:  scripts\ejecutar.bat --lote pruebas\cu3.txt     (respuestas en salida\01.html, 02.html, ...)
 # Requiere: --instalar y haber corrido pruebas\cu1.txt, cu2.txt y cu4.txt
 #           (usa el programa "Noticiero Central", el material NOT-2011 en PENDIENTE y el usuario ana.rojas@gmail.com).
 # OJO: crea y borra parrillas en la base configurada. Usa fechas de 2030 para no chocar con datos reales.

@@ -1,6 +1,6 @@
 -- =====================================================================
 -- Canal 11 - Sistema de Gestion de Programacion y Contenidos
--- Tablas (esquema canal11). Se ejecuta con: ejecutar.bat --instalar
+-- Tablas (esquema canal11). Se ejecuta con: scripts\ejecutar.bat --instalar
 -- Una tabla por entidad de los casos de uso aprobados (CU1..CU8).
 --
 -- Cada tabla tiene una CLAVE NATURAL unica para que en los comandos no haya que

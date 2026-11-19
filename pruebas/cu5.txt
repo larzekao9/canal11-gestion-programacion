@@ -1,6 +1,6 @@
 # Pruebas del CU5 - Validar Estado de Emision
 # Formato de cada linea:   remitente | asunto
-# Ejecutar:  ejecutar.bat --lote pruebas\cu5.txt     (respuestas en salida\01.html, 02.html, ...)
+# Ejecutar:  scripts\ejecutar.bat --lote pruebas\cu5.txt     (respuestas en salida\01.html, 02.html, ...)
 # Requiere: --instalar y haber corrido pruebas\cu1.txt, cu2.txt y cu4.txt
 #           (usa NOT-2011 y SPOT-BSOL-01 en PENDIENTE, PROMO-01 dado de baja, ana.rojas@gmail.com = ENCARGADO
 #            y pedro.vaca@hotmail.com = PROGRAMADOR).

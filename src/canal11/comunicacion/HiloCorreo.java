@@ -1,10 +1,13 @@
 package canal11.comunicacion;
 
+import canal11.config.Config;
 import canal11.config.Registro;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Hilo que revisa el buzon cada N segundos (ciclo "forever" del servidor).
@@ -23,6 +26,10 @@ public class HiloCorreo implements Runnable {
     private final int intervaloSegundos;
     private final OyenteCorreo oyente;
     private volatile boolean activo = true;
+    /** pop3.borrar=false (solo pruebas): los correos se leen sin borrarlos y se recuerdan los ya procesados. */
+    private final boolean borrar = !"false".equalsIgnoreCase(Config.get("pop3.borrar"));
+    private final Set<String> yaLeidos = new HashSet<>();
+    private boolean primeraVuelta = true;
 
     public HiloCorreo(String host, int puerto, String usuario, String password, int intervaloSegundos, OyenteCorreo oyente) {
         this.host = host;
@@ -62,7 +69,7 @@ public class HiloCorreo implements Runnable {
         activo = false;
     }
 
-    /** Descarga todos los correos del buzon y los borra (el QUIT al cerrar aplica los DELE). */
+    /** Descarga todos los correos del buzon y los borra (el QUIT al cerrar aplica los DELE), salvo con pop3.borrar=false. */
     private List<Correo> descargar() throws IOException {
         List<Correo> correos = new ArrayList<>();
         try (ClientePOP3 pop = new ClientePOP3(host, puerto)) {
@@ -70,6 +77,15 @@ public class HiloCorreo implements Runnable {
             int total = pop.cantidadMensajes();
             for (int i = 1; i <= total; i++) {
                 try {
+                    if (!borrar) {
+                        String uid = pop.identificador(i);
+                        // Sin borrar, lo que ya estaba al arrancar se da por leido: no se vuelven a ejecutar comandos viejos.
+                        if (!yaLeidos.add(uid) || primeraVuelta) {
+                            continue;
+                        }
+                        correos.add(pop.obtener(i));
+                        continue;
+                    }
                     correos.add(pop.obtener(i));
                     pop.eliminar(i);
                 } catch (ClientePOP3.ErrorPOP3 e) {
@@ -77,6 +93,7 @@ public class HiloCorreo implements Runnable {
                     System.err.println("[HiloCorreo] Mensaje " + i + " omitido: " + e.getMessage());
                 }
             }
+            primeraVuelta = false;
         }
         return correos;
     }

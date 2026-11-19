@@ -1,5 +1,6 @@
 package canal11.presentacion;
 
+import canal11.config.Registro;
 import canal11.datos.DMaterial;
 import canal11.negocio.NAviso;
 import canal11.negocio.NMaterial;
@@ -34,7 +35,11 @@ public class PValidacion {
                 + Html.parrafo("Materiales pendientes: " + Html.codigo("lisMat[\"PENDIENTE\"]"))
                 + (aprobado ? "" : Html.parrafo("Tras corregirlo, modifique el material " + Html.codigo("mosMat[\"" + f[1] + "\"]")
                 + " y apruébelo con " + Html.codigo("valMat[\"" + f[1] + "\",\"APROBADO\",\"Corregido\"]")));
-        avisarAlRegistrante(u, id, f, aprobado);
+        try {
+            avisarAlRegistrante(u, id, f, aprobado);
+        } catch (Exception e) { // la validacion ya se guardo: un aviso que falla no la convierte en error
+            Registro.errorSistema("Aviso de validacion del material " + f[1], e);
+        }
         return new Respuesta(aprobado ? "Material aprobado" : "Material rechazado",
                 aviso + Html.ficha(PMaterial.COLUMNAS, f) + siguiente);
     }

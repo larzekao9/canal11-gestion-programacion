@@ -128,12 +128,35 @@ tiempo: solo se avisa. Los avisos automáticos se marcan en `aviso_enviado` para
 
 Requisitos: Java 17 o superior y el driver incluido en `lib/`.
 
-1. Copiar `config.properties.example` como `config.properties` y completar las contraseñas.
-2. Compilar: `compilar.bat` (Windows) o `./compilar.sh` (Linux/macOS).
-3. `ejecutar.bat --instalar` (o `./ejecutar.sh --instalar`) — crea el esquema `canal11` y sus tablas en `db_grupo12sa`.
-4. `ejecutar.bat` (o `./ejecutar.sh`) — revisa `grupo12sa@tecnoweb.org.bo` cada 10 s y responde.
+El perfil (`local` o `real`) es **obligatorio**: así nunca se toca la base o el correo del curso por error. Compilar es igual para los dos.
 
-Todos los ejemplos de abajo usan `ejecutar.bat`; en Linux/macOS es `./ejecutar.sh` con los mismos argumentos.
+| | `local` | `real` |
+|---|---|---|
+| Configuración | `config.local.properties` (se crea sola desde `config.local.properties.example`) | `config.properties` (copiar `config.properties.example` y completar las contraseñas) |
+| Base de datos | PostgreSQL local, base `canal11_local` | `db_grupo12sa` del curso |
+| Correo | Mailpit en Docker (POP3 55110, SMTP 55025, web http://localhost:58025) | servidor del curso |
+
+```bash
+./scripts/compilar.sh                       # (Windows: scripts\compilar.bat) igual para local y real
+./scripts/ejecutar.sh local --instalar      # crea las tablas (la primera vez lo hace solo)
+./scripts/ejecutar.sh local                 # todo local: prepara base y Mailpit si hace falta y arranca el sistema
+./scripts/ejecutar.sh real --instalar       # lo mismo contra el servidor del curso
+./scripts/ejecutar.sh real                  # revisa grupo12sa@tecnoweb.org.bo cada 10 s y responde
+```
+
+**Datos de demostración:** `./scripts/ejecutar.sh local --poblar` **borra la base local** y la recarga con la programación de Canal 11 basada en la grilla real
+del viernes 20-11-2026 (programas, horarios y duraciones reales; 4 días con parrillas, escaletas, spots y emisiones; las fechas son relativas a hoy,
+así que se repite el día de la defensa). Solo se permite en base local: sobre la del curso se niega. El guion está en [docs/GUION_DEFENSA.md](docs/GUION_DEFENSA.md)
+y los comandos se mandan con `./pruebas/cmd.sh ana 'lisLea["{HOY}","12:30"]'`. Los datos se generan con `scripts/generar_04_demo.py`.
+
+Con `local` se manda un comando como si fuera un correo y las respuestas y avisos se ven en http://localhost:58025
+(en local los correos no se borran al leerlos: `pop3.borrar=false`):
+
+```bash
+python3 scripts/enviar_local.py ana.rojas@gmail.com 'lisMat["PENDIENTE"]'
+```
+
+Todos los ejemplos de abajo usan `scripts\ejecutar.bat <perfil>`; en Linux/macOS es `./scripts/ejecutar.sh <perfil>` con los mismos argumentos.
 
 Si el servidor del curso no es alcanzable directamente, se puede usar un túnel SSH y apuntar `config.properties` a `localhost`
 (puertos del túnel en `pop3.puerto`, `smtp.puerto` y `db.puerto`).
@@ -142,22 +165,17 @@ Herramientas de prueba:
 
 | Comando | Para qué |
 |---|---|
-| `ejecutar.bat --probar "help" larzekaobnc@gmail.com` | Procesa un asunto sin correo; guarda la respuesta en `salida/respuesta.html` |
-| `ejecutar.bat --lote pruebas\cu1.txt` | Ejecuta una batería de pruebas; respuestas en `salida/01.html`, `02.html`... |
-| `ejecutar.bat --buzon` | Lista los correos del buzón sin borrarlos |
-| `ejecutar.bat --enviar-prueba correo@destino.com` | Envía la ayuda a un correo (prueba del SMTP) |
+| `scripts\ejecutar.bat local --probar "help" larzekaobnc@gmail.com` | Procesa un asunto sin correo; guarda la respuesta en `salida/respuesta.html` |
+| `scripts\ejecutar.bat local --lote pruebas\cu1.txt` | Ejecuta una batería de pruebas; respuestas en `salida/01.html`, `02.html`... |
+| `scripts\ejecutar.bat real --buzon` | Lista los correos del buzón sin borrarlos |
+| `scripts\ejecutar.bat real --enviar-prueba correo@destino.com` | Envía la ayuda a un correo (prueba del SMTP) |
 
 > El servidor SMTP del curso solo reenvía a correos externos (Gmail) desde la red de la facultad.
 
-### Probar con una base local (rápido)
-
-Contra la base del curso cada comando tarda varios segundos; en local toda la batería (`cu1` a `cu9`) corre en unos 7 s:
+Contra la base del curso cada comando tarda varios segundos; en `local` toda la batería corre en unos 7 s:
 
 ```bash
-createdb canal11_local && psql canal11_local -c "CREATE EXTENSION btree_gist"
-# en config.properties: db.host=localhost, db.nombre=canal11_local, db.usuario=<su usuario>, db.password=
-./ejecutar.sh --instalar
-for n in 1 2 4 5 3 6 7 8 9; do ./ejecutar.sh --lote pruebas/cu$n.txt; done
+for n in 1 2 4 5 3 6 7 8 9; do ./scripts/ejecutar.sh local --lote pruebas/cu$n.txt; done
 ```
 
 ## Uso

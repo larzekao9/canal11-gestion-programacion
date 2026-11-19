@@ -1,6 +1,6 @@
 # Pruebas del CU7 - Conciliar Emision Real, Registrar Auditoria
 # Formato de cada linea:   remitente | asunto
-# Ejecutar:  ejecutar.bat --lote pruebas\cu7.txt     (respuestas en salida\01.html, 02.html, ...)
+# Ejecutar:  scripts\ejecutar.bat --lote pruebas\cu7.txt     (respuestas en salida\01.html, 02.html, ...)
 # Requiere: --instalar y haber corrido pruebas\cu1.txt, cu2.txt, cu4.txt y cu5.txt
 #           (usa SPOT-BSOL-01 APROBADO de 30 s, ana.rojas@gmail.com = ENCARGADO y pedro.vaca@hotmail.com = PROGRAMADOR y produccion.canal11@gmail.com = PRODUCCION).
 # OJO: crea pautas, parrillas, spots y emisiones en la base configurada (fechas de 2031).

@@ -1,7 +1,7 @@
 # Pruebas del CU2 - Catalogo de Programas
 # Formato de cada linea:   remitente | asunto
-# Ejecutar:  ejecutar.bat --lote pruebas\cu2.txt     (respuestas en salida\01.html, 02.html, ...)
-# Requiere: ejecutar.bat --instalar y haber corrido pruebas\cu1.txt (usa ana.rojas@gmail.com como ENCARGADO)
+# Ejecutar:  scripts\ejecutar.bat --lote pruebas\cu2.txt     (respuestas en salida\01.html, 02.html, ...)
+# Requiere: scripts\ejecutar.bat --instalar y haber corrido pruebas\cu1.txt (usa ana.rojas@gmail.com como ENCARGADO)
 # OJO: crea, modifica y da de baja programas en la base configurada.
 
 # --- ayuda ---

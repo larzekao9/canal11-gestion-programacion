@@ -76,6 +76,12 @@ public class ClientePOP3 implements AutoCloseable {
         return "";
     }
 
+    /** Identificador unico y estable del mensaje n (UIDL): sirve para reconocer un correo ya leido sin borrarlo. */
+    public String identificador(int n) throws IOException {
+        String[] partes = comando("UIDL " + n).trim().split("\\s+");
+        return partes.length >= 3 ? partes[2] : String.valueOf(n);
+    }
+
     /** Marca el mensaje n para borrar (se aplica al cerrar con QUIT). */
     public void eliminar(int n) throws IOException {
         comando("DELE " + n);

@@ -31,19 +31,19 @@ Requisitos: Java 17 o superior (`java -version`). No usa Maven ni frameworks; el
 
 ```bat
 copy config.properties.example config.properties   (y completar las contraseñas)
-compilar.bat
-ejecutar.bat --instalar                             (crea el esquema canal11, tablas y mejoras; se puede repetir)
-ejecutar.bat                                        (revisa el buzón cada 10 s y responde)
+scripts\compilar.bat
+scripts\ejecutar.bat --instalar                             (crea el esquema canal11, tablas y mejoras; se puede repetir)
+scripts\ejecutar.bat                                        (revisa el buzón cada 10 s y responde)
 ```
 
 ### Herramientas de prueba (no necesitan correo)
 
 | Comando | Qué hace |
 |---|---|
-| `ejecutar.bat --probar "lisUsu[\"*\"]" larzekaobnc@gmail.com` | Procesa un asunto como si llegara de ese remitente. La respuesta queda en `salida\respuesta.html` (ábrala en el navegador) |
-| `ejecutar.bat --lote pruebas\cu1.txt` | Ejecuta todas las líneas `remitente \| asunto` del archivo. Respuestas en `salida\01.html`, `02.html`... y un resumen OK/ERROR en consola |
-| `ejecutar.bat --buzon` | Lista los correos del buzón **sin borrarlos** y dice cuáles se responderían |
-| `ejecutar.bat --enviar-prueba correo@x.com` | Envía la ayuda a ese correo (prueba del SMTP) |
+| `scripts\ejecutar.bat --probar "lisUsu[\"*\"]" larzekaobnc@gmail.com` | Procesa un asunto como si llegara de ese remitente. La respuesta queda en `salida\respuesta.html` (ábrala en el navegador) |
+| `scripts\ejecutar.bat --lote pruebas\cu1.txt` | Ejecuta todas las líneas `remitente \| asunto` del archivo. Respuestas en `salida\01.html`, `02.html`... y un resumen OK/ERROR en consola |
+| `scripts\ejecutar.bat --buzon` | Lista los correos del buzón **sin borrarlos** y dice cuáles se responderían |
+| `scripts\ejecutar.bat --enviar-prueba correo@x.com` | Envía la ayuda a ese correo (prueba del SMTP) |
 
 ### Mejoras de BD y rol PRODUCCION (fase 9)
 - `Instalador.leerSentencias` respeta los bloques `$$ ... $$` (funciones plpgsql y `DO`). Antes de `03_mejoras.sql` revisa los datos existentes y, si hay bloques solapados, bloques con tipo inconsistente o emails repetidos con otra capitalización, lo informa y se detiene.
@@ -81,7 +81,7 @@ db.puerto=55499
 db.password=prueba
 app.intervalo=3
 ```
-Luego `--instalar`, `--lote`, o `ejecutar.bat` para probar el hilo completo. Para "recibir" correos, envíelos por SMTP a `localhost:55025` (con un `From:` registrado y el comando en el `Subject:`). Las respuestas se ven en http://localhost:58025 (hasta que el hilo las borre en la vuelta siguiente; en consola aparecen como *Ignorado ... Canal 11 | ...*). Al terminar: `docker rm -f canal11-pg canal11-mail`.
+Luego `--instalar`, `--lote`, o `scripts\ejecutar.bat` para probar el hilo completo. Para "recibir" correos, envíelos por SMTP a `localhost:55025` (con un `From:` registrado y el comando en el `Subject:`). Las respuestas se ven en http://localhost:58025 (hasta que el hilo las borre en la vuelta siguiente; en consola aparecen como *Ignorado ... Canal 11 | ...*). Al terminar: `docker rm -f canal11-pg canal11-mail`.
 
 > Mailpit numera los correos del más nuevo al más viejo; el servidor del curso (Dovecot) del más viejo al más nuevo. Por eso, en la prueba local, varios comandos enviados juntos se procesan en orden inverso.
 
@@ -161,7 +161,7 @@ canal11-programacion/
 ├── pruebas/cu1.txt               batería de pruebas del CU1 (modelo para las demás)
 ├── pruebas/bd_restricciones.sql  demuestra que la BD rechaza datos inválidos (psql -f; no deja datos)
 ├── docs/GUIA_DESARROLLO.md       esta guía
-├── compilar.bat / ejecutar.bat
+├── scripts\compilar.bat / scripts\ejecutar.bat
 └── config.properties(.example)
 ```
 
@@ -262,7 +262,7 @@ cmd(2, "lisPro", "...", p("filtro"), "lisPro[\"*\"]", TODOS, programa::listar); 
 ```
 El `help` se actualiza solo (desaparece "en desarrollo").
 
-**Paso 5 — Probar: `pruebas/cu2.txt`** (copiar `cu1.txt`) con casos correctos, errores de validación, repetidos y permisos. Correr `ejecutar.bat --lote pruebas\cu2.txt` y revisar los `.html`.
+**Paso 5 — Probar: `pruebas/cu2.txt`** (copiar `cu1.txt`) con casos correctos, errores de validación, repetidos y permisos. Correr `scripts\ejecutar.bat --lote pruebas\cu2.txt` y revisar los `.html`.
 
 **Paso 6 — Documento:** para el CU, en el informe: comandos, flujo principal, flujos alternativos (cada error de la prueba es uno) y diagramas.
 
@@ -320,7 +320,7 @@ Mostrar una tabla con totales al final.
 ---
 
 ## 8. Checklist antes de dar una fase por terminada
-- [ ] Compila (`compilar.bat`) sin errores.
+- [ ] Compila (`scripts\compilar.bat`) sin errores.
 - [ ] Los comandos del CU ya no dicen "en desarrollo" en `help["N"]`.
 - [ ] `pruebas/cuN.txt` con casos correctos, de validación, repetidos y de permisos; todos dan el resultado esperado.
 - [ ] Cada alta/modificación/baja aparece en `auditoria`.

@@ -1,5 +1,6 @@
 package canal11.presentacion;
 
+import canal11.config.Registro;
 import canal11.negocio.NAviso;
 import canal11.negocio.NLead;
 import canal11.negocio.NParrilla;
@@ -91,10 +92,14 @@ public class PParrilla {
             html += Html.info("<b>Avisos</b> (no impidieron publicar):" + Html.lista(escapar(avisosDePublicacion)));
         }
         if (Notificador.activo()) {
-            // El orden de transmision llega solo a Produccion y Prensa: ya no hace falta mandarlo por WhatsApp.
-            Notificador.enviar(avisos.emailsDeRoles(u.getEmail(), Rol.PRODUCCION, Rol.ENCARGADO), "Parrilla publicada: " + f[1],
-                    Html.parrafo(Html.esc(u.getNombre()) + " publicó la parrilla del <b>" + f[1] + "</b>. Es la <b>única fuente</b> del orden "
-                            + "de transmisión: si cambia, recibirá un nuevo aviso.") + correo(p.get(0), avisosDePublicacion));
+            try {
+                // El orden de transmision llega solo a Produccion y Prensa: ya no hace falta mandarlo por WhatsApp.
+                Notificador.enviar(avisos.emailsDeRoles(u.getEmail(), Rol.PRODUCCION, Rol.ENCARGADO), "Parrilla publicada: " + f[1],
+                        Html.parrafo(Html.esc(u.getNombre()) + " publicó la parrilla del <b>" + f[1] + "</b>. Es la <b>única fuente</b> del orden "
+                                + "de transmisión: si cambia, recibirá un nuevo aviso.") + correo(p.get(0), avisosDePublicacion));
+            } catch (Exception e) { // la parrilla ya se publico: un aviso que falla no debe convertirla en error
+                Registro.errorSistema("Aviso de parrilla publicada " + f[1], e);
+            }
         }
         return new Respuesta("Parrilla publicada", html + vista(f, p.get(0)));
     }
@@ -106,10 +111,14 @@ public class PParrilla {
         String cambio = "El bloque de <b>" + Html.esc(r[3]) + "</b> (" + Html.esc(hora(r[4]) + " - " + hora(r[5])) + ") pasó del material <b>"
                 + Html.esc(r[0]) + "</b> a <b>" + Html.esc(r[1]) + "</b>.";
         if (Notificador.activo() && "PUBLICADA".equals(r[2])) {
-            Notificador.enviar(avisos.emailsDeRoles(u.getEmail(), Rol.PRODUCCION, Rol.ENCARGADO),
-                    "Cambio en la parrilla del " + f[1],
-                    Html.parrafo(Html.esc(u.getNombre()) + " (" + Html.esc(u.getRol().getNombre()) + ") hizo un cambio en la parrilla publicada del <b>"
-                            + f[1] + "</b>.") + Html.info(cambio + " Este es el material que debe salir al aire.") + correo(p.get(0), List.of()));
+            try {
+                Notificador.enviar(avisos.emailsDeRoles(u.getEmail(), Rol.PRODUCCION, Rol.ENCARGADO),
+                        "Cambio en la parrilla del " + f[1],
+                        Html.parrafo(Html.esc(u.getNombre()) + " (" + Html.esc(u.getRol().getNombre()) + ") hizo un cambio en la parrilla publicada del <b>"
+                                + f[1] + "</b>.") + Html.info(cambio + " Este es el material que debe salir al aire.") + correo(p.get(0), List.of()));
+            } catch (Exception e) { // el cambio ya se hizo: un aviso que falla no lo convierte en error
+                Registro.errorSistema("Aviso de cambio de parrilla " + f[1], e);
+            }
         }
         String aviso = "PUBLICADA".equals(r[2]) ? Html.info("La parrilla ya está publicada: se avisó del cambio a Producción y Prensa.") : "";
         return new Respuesta("Material del bloque cambiado", Html.exito(cambio) + aviso + vista(f, p.get(0)));

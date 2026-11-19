@@ -17,13 +17,58 @@ import java.util.List;
 
 /**
  * Crea el esquema y ejecuta los scripts de la carpeta sql/ (tablas y datos iniciales).
- * Uso: ejecutar.bat --instalar
+ * Uso: scripts\ejecutar.bat --instalar
  */
 public final class Instalador {
 
     private static final String[] SCRIPTS = {"sql/01_tablas.sql", "sql/02_datos.sql", "sql/03_mejoras.sql"};
 
     private Instalador() {
+    }
+
+    /**
+     * --poblar: BORRA todo el esquema, lo vuelve a crear y carga sql/04_demo.sql (programacion representativa de Canal 11 con
+     * fechas relativas a hoy, para demostraciones y pruebas). En una base que no es local (la del curso) exige confirmar
+     * con --si-borrar-real, porque borra lo que haya en el esquema.
+     */
+    public static void poblar(boolean confirmoBorrarReal) throws IOException, SQLException {
+        String host = Config.get("db.host");
+        boolean local = host.equals("localhost") || host.equals("127.0.0.1") || host.equals("::1");
+        if (!local && !confirmoBorrarReal) {
+            System.err.println("--poblar BORRA todo el esquema '" + Config.get("db.esquema") + "' de " + host + "/" + Config.get("db.nombre") + " y carga datos de demostracion.\n"
+                    + "Si es lo que quiere, repita agregando --si-borrar-real:   ./scripts/ejecutar.sh real --poblar --si-borrar-real");
+            System.exit(1);
+        }
+        String esquema = Config.get("db.esquema");
+        if (!esquema.matches("[a-z_][a-z0-9_]*")) {
+            throw new IllegalArgumentException("Nombre de esquema invalido: " + esquema);
+        }
+        String urlBase = "jdbc:postgresql://" + host + ":" + Config.get("db.puerto") + "/" + Config.get("db.nombre");
+        try (Connection c = DriverManager.getConnection(urlBase, Config.get("db.usuario"), Config.get("db.password"));
+             Statement st = c.createStatement()) {
+            st.execute("DROP SCHEMA IF EXISTS " + esquema + " CASCADE");
+            System.out.println("  Esquema '" + esquema + "' borrado.");
+        }
+        instalar();
+        try (Connection c = DriverManager.getConnection(urlBase, Config.get("db.usuario"), Config.get("db.password"));
+             Statement st = c.createStatement()) {
+            st.execute("SET search_path TO " + esquema + ", public");
+            int n = 0;
+            for (String sentencia : leerSentencias(Path.of("sql/04_demo.sql"))) {
+                st.execute(sentencia);
+                n++;
+            }
+            System.out.println("  sql/04_demo.sql: " + n + " sentencia(s) ejecutadas");
+            String[] tablas = {"usuario", "programa", "material", "parrilla", "bloque", "escaleta", "pauta", "spot", "emision", "auditoria"};
+            StringBuilder resumen = new StringBuilder("  Datos cargados:");
+            for (String t : tablas) {
+                try (java.sql.ResultSet rs = st.executeQuery("SELECT count(*) FROM " + t)) {
+                    rs.next();
+                    resumen.append(' ').append(t).append('=').append(rs.getInt(1));
+                }
+            }
+            System.out.println(resumen);
+        }
     }
 
     public static void instalar() throws IOException, SQLException {

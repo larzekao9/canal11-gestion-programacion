@@ -1,7 +1,7 @@
 # Pruebas del CU4 - Materiales de Video
 # Formato de cada linea:   remitente | asunto
-# Ejecutar:  ejecutar.bat --lote pruebas\cu4.txt     (respuestas en salida\01.html, 02.html, ...)
-# Requiere: ejecutar.bat --instalar, pruebas\cu1.txt (ana.rojas@gmail.com = ENCARGADO tras modUsu)
+# Ejecutar:  scripts\ejecutar.bat --lote pruebas\cu4.txt     (respuestas en salida\01.html, 02.html, ...)
+# Requiere: scripts\ejecutar.bat --instalar, pruebas\cu1.txt (ana.rojas@gmail.com = ENCARGADO tras modUsu)
 #           y pruebas\cu2.txt (programas "Noticiero Central" activo y "Cine de Oro" dado de baja).
 # OJO: crea, modifica y da de baja materiales en la base configurada.
 

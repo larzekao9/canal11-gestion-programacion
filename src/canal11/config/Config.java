@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 /**
- * Lee la configuracion desde config.properties (carpeta desde donde se ejecuta el programa).
+ * Lee la configuracion desde config.properties (o el archivo indicado con -Dcanal11.config; ver ejecutar.sh local|real).
  * Si una clave no esta en el archivo se usa el valor por defecto definido aqui.
  */
 public final class Config {
@@ -30,6 +30,8 @@ public final class Config {
         PROPS.setProperty("db.usuario", "grupo12sa");
         PROPS.setProperty("db.password", "");
         PROPS.setProperty("db.esquema", "canal11");
+        // Borrar los correos al leerlos (true). Poner false SOLO en pruebas locales para poder verlos en Mailpit
+        PROPS.setProperty("pop3.borrar", "true");
         // Cada cuantos segundos se revisa el buzon
         PROPS.setProperty("app.intervalo", "10");
 
@@ -55,11 +57,13 @@ public final class Config {
         PROPS.setProperty("app.zona", "America/La_Paz");
         PROPS.setProperty("app.ahora", "");
 
-        try (InputStreamReader in = new InputStreamReader(
-                new FileInputStream("config.properties"), StandardCharsets.UTF_8)) {
+        // El archivo lo elige ejecutar.sh/ejecutar.bat con -Dcanal11.config (local o real); por defecto config.properties
+        String archivo = System.getProperty("canal11.config", "config.properties");
+        try (InputStreamReader in = new InputStreamReader(new FileInputStream(archivo), StandardCharsets.UTF_8)) {
             PROPS.load(in);
+            System.out.println("[Config] Usando " + archivo + " (base " + PROPS.getProperty("db.host") + "/" + PROPS.getProperty("db.nombre") + ")");
         } catch (IOException e) {
-            System.out.println("[Config] No se encontro config.properties; se usan valores por defecto.");
+            System.out.println("[Config] No se encontro " + archivo + "; se usan valores por defecto.");
         }
     }
 

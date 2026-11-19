@@ -27,12 +27,13 @@ import java.util.List;
 /**
  * Sistema de Gestion de Programacion y Contenidos - Canal 11 (via correo electronico).
  *
- *   ejecutar.bat                               arranca el hilo que revisa el buzon cada N segundos y responde
- *   ejecutar.bat --instalar                    crea las tablas en la base de datos
- *   ejecutar.bat --probar "help" correo        procesa un asunto sin usar el correo (pruebas)
- *   ejecutar.bat --lote pruebas\cu1.txt        procesa una bateria de pruebas (remitente | asunto)
- *   ejecutar.bat --buzon                       lista los correos del buzon sin borrarlos
- *   ejecutar.bat --enviar-prueba correo        envia la ayuda a un correo (prueba de SMTP)
+ *   scripts\ejecutar.bat                               arranca el hilo que revisa el buzon cada N segundos y responde
+ *   scripts\ejecutar.bat <local|real> --instalar                    crea las tablas en la base de datos
+ *   scripts\ejecutar.bat local --poblar                borra el esquema y carga una programacion representativa de Canal 11 (demostracion); en real exige --si-borrar-real
+ *   scripts\ejecutar.bat --probar "help" correo        procesa un asunto sin usar el correo (pruebas)
+ *   scripts\ejecutar.bat --lote pruebas\cu1.txt        procesa una bateria de pruebas (remitente | asunto)
+ *   scripts\ejecutar.bat --buzon                       lista los correos del buzon sin borrarlos
+ *   scripts\ejecutar.bat --enviar-prueba correo        envia la ayuda a un correo (prueba de SMTP)
  */
 public class App {
 
@@ -48,6 +49,7 @@ public class App {
 
         switch (opcion) {
             case "--instalar" -> Instalador.instalar();
+            case "--poblar" -> Instalador.poblar(java.util.Arrays.asList(args).contains("--si-borrar-real"));
             case "--probar" -> new App().probar(args);
             case "--lote" -> new App().probarLote(args);
             case "--buzon" -> new App().listarBuzon();
@@ -168,7 +170,7 @@ public class App {
     /** --probar "asunto" [remitente]: muestra la respuesta y la guarda en salida/respuesta.html. */
     private void probar(String[] args) throws IOException {
         if (args.length < 2) {
-            System.out.println("Uso: ejecutar.bat --probar \"help\" correo@remitente.com");
+            System.out.println("Uso: scripts\\ejecutar.bat --probar \"help\" correo@remitente.com");
             return;
         }
         String remitente = args.length > 2 ? args[2] : "";
@@ -187,7 +189,7 @@ public class App {
      */
     private void probarLote(String[] args) throws IOException {
         if (args.length < 2) {
-            System.out.println("Uso: ejecutar.bat --lote pruebas\\cu1.txt");
+            System.out.println("Uso: scripts\\ejecutar.bat --lote pruebas\\cu1.txt");
             return;
         }
         Path carpeta = Path.of("salida");
@@ -228,7 +230,7 @@ public class App {
     /** --enviar-prueba correo: envia la ayuda general (prueba del cliente SMTP). */
     private void enviarPrueba(String[] args) throws IOException {
         if (args.length < 2) {
-            System.out.println("Uso: ejecutar.bat --enviar-prueba correo@destino.com [remitente_registrado]");
+            System.out.println("Uso: scripts\\ejecutar.bat --enviar-prueba correo@destino.com [remitente_registrado]");
             return;
         }
         String remitente = args.length > 2 ? args[2] : args[1];

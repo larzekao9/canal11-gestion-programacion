@@ -1,7 +1,7 @@
 # Pruebas del CU1 - Gestion de Usuarios
 # Formato de cada linea:   remitente | asunto
-# Ejecutar:  ejecutar.bat --lote pruebas\cu1.txt     (las respuestas quedan en salida\01.html, 02.html, ...)
-# Requiere haber hecho antes: ejecutar.bat --instalar
+# Ejecutar:  scripts\ejecutar.bat --lote pruebas\cu1.txt     (las respuestas quedan en salida\01.html, 02.html, ...)
+# Requiere haber hecho antes: scripts\ejecutar.bat --instalar
 # OJO: crea, modifica y da de baja usuarios en la base configurada.
 
 # --- ayuda ---

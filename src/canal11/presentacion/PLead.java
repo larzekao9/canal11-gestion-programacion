@@ -1,5 +1,6 @@
 package canal11.presentacion;
 
+import canal11.config.Registro;
 import canal11.negocio.NAviso;
 import canal11.negocio.NLead;
 import canal11.negocio.Rol;
@@ -81,9 +82,17 @@ public class PLead {
 
     /** Si la parrilla ya esta publicada, avisa el cambio a Produccion y Programacion. */
     private void avisar(Usuario u, String fecha, String hora, String que) throws Exception {
-        if (!Notificador.activo() || !negocio.parrillaPublicada(fecha)) {
-            return;
+        try {
+            if (!Notificador.activo() || !negocio.parrillaPublicada(fecha)) {
+                return;
+            }
+            enviarAviso(u, fecha, hora, que);
+        } catch (Exception e) { // el cambio ya se hizo: un aviso que falla no lo convierte en error
+            Registro.errorSistema("Aviso de cambio en la escaleta " + fecha, e);
         }
+    }
+
+    private void enviarAviso(Usuario u, String fecha, String hora, String que) throws Exception {
         String contenido = Html.parrafo(Html.esc(u.getNombre()) + " (" + Html.esc(u.getRol().getNombre()) + ") " + que + ".")
                 + Html.info("La parrilla del <b>" + Html.esc(fecha.trim()) + "</b> ya está publicada: este es el orden vigente del noticiero.")
                 + vista(fecha, hora);

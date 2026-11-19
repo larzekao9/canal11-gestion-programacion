@@ -8,3 +8,5 @@ salida/
 .DS_Store
 logs/
 salida_srv/
+config.local.properties
+.local/

@@ -1,0 +1,29 @@
+# Perfil LOCAL: todo en su computadora (base PostgreSQL local + Mailpit como servidor de correo de prueba).
+# ./scripts/ejecutar.sh local  crea config.local.properties a partir de este archivo (cambia USUARIO por su usuario del sistema).
+# Mailpit (Docker): POP3 55110, SMTP 55025, pagina web http://localhost:58025
+
+mail.usuario=grupo12sa
+mail.password=clave
+mail.direccion=grupo12sa@tecnoweb.org.bo
+pop3.host=localhost
+pop3.puerto=55110
+smtp.host=localhost
+smtp.puerto=55025
+
+db.host=localhost
+db.puerto=5432
+db.nombre=canal11_local
+db.usuario=USUARIO
+db.password=
+db.esquema=canal11
+
+# En pruebas locales los correos NO se borran al leerlos: se ven en la pagina de Mailpit
+pop3.borrar=false
+app.intervalo=3
+
+# Plazos cortos para demostrar los avisos en vivo (sin restriccion de horario)
+revision.minutos_aviso=1
+revision.minutos_escalar=2
+revision.intervalo=10
+revision.hora_desde=00:00
+revision.hora_hasta=23:59

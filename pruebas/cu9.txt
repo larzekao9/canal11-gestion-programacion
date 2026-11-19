@@ -1,7 +1,7 @@
 # Pruebas de las mejoras de negocio: escaleta del noticiero, camBlo, reglas de fecha, cobertura 24 h,
 # validador distinto del registrante, duplicados y extension de la ruta.
 # Formato de cada linea:   remitente | asunto        (la linea  @ahora AAAA-MM-DDTHH:MM  fija la hora del sistema)
-# Ejecutar:  ejecutar.bat --lote pruebas\cu9.txt
+# Ejecutar:  scripts\ejecutar.bat --lote pruebas\cu9.txt
 # Requiere: --instalar y haber corrido pruebas\cu1.txt (usuarios larzekaobnc@gmail.com = ADMINISTRADOR,
 #           ana.rojas@gmail.com = ENCARGADO, pedro.vaca@hotmail.com = PROGRAMADOR y produccion.canal11@gmail.com = PRODUCCION).
 # OJO: crea programas, materiales y parrillas en la base configurada (fechas de 2032).
